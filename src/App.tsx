@@ -18,6 +18,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const backdrop = SCENES.find((s) => s.key === scene) ?? SCENES[0];
+  const selectedImage = images.find((img) => img.id === selectedId) ?? null;
 
   const addFiles = useCallback((files: File[], centerX: number, centerY: number) => {
     const created = files.map((file, i) => createPlacedImage(file, centerX + i * 18, centerY + i * 18));
@@ -62,6 +63,23 @@ export default function App() {
 
   return (
     <div className="workstation">
+      {/* Real per-pixel duotone (riso two-colour print look), applied via CSS filter: url(#duotone-riso) */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
+        <defs>
+          <filter id="duotone-riso">
+            <feColorMatrix
+              type="matrix"
+              values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0"
+            />
+            <feComponentTransfer>
+              <feFuncR type="table" tableValues="0.176 1" />
+              <feFuncG type="table" tableValues="0.231 0.839" />
+              <feFuncB type="table" tableValues="0.8 0" />
+            </feComponentTransfer>
+          </filter>
+        </defs>
+      </svg>
+
       <div className="scene-backdrop" style={{ background: backdrop.background }} />
 
       <TopBar
@@ -84,7 +102,7 @@ export default function App() {
         onAddFiles={addFiles}
       />
 
-      <EffectsPanel />
+      <EffectsPanel image={selectedImage} onUpdate={updateImage} />
 
       <FolderShelf open={showFolders} onClose={() => setShowFolders(false)} />
 

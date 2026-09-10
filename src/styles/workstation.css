@@ -171,6 +171,52 @@
   outline: 2.5px dashed var(--cobalt);
   outline-offset: 4px;
 }
+.image-node img { transition: filter 0.15s ease; }
+
+/* Polaroid layer: asymmetric white frame, thicker at the bottom */
+.image-node.polaroid img {
+  border-width: 10px 10px 34px;
+}
+
+/* Grain layer: the REAL scanned photocopy texture, not a generated pattern.
+   Shown once at cover size (not tiled) — it's a soft banding scan, not fine
+   grain, so tiling it small just repeats the bands into a blocky checkerboard. */
+.image-node-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url('/textures/paper-photocopy.jpg');
+  background-size: cover;
+  background-position: center;
+  mix-blend-mode: overlay;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Halftone layer: generated dot-screen pattern (not a scrapbook asset, so the
+   real-assets rule doesn't apply — this is an algorithmic print effect) */
+.image-node-halftone {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(20, 18, 31, 0.85) 38%, transparent 40%);
+  background-size: 5px 5px;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* VHS layer: scanlines + faint RGB fringing along the edges */
+.image-node-vhs {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(20, 18, 31, 0.16) 0 1px,
+    transparent 1px 3px
+  );
+  box-shadow: inset 3px 0 0 rgba(232, 48, 48, 0.28), inset -3px 0 0 rgba(45, 59, 204, 0.28);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
 .image-node-handle {
   position: absolute;
   width: 16px;
@@ -315,6 +361,37 @@
   border-radius: 12px;
   padding: 18px 14px;
   text-align: center;
+}
+
+.panel-group-label {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 18px 0 8px;
+}
+.panel-group-label:first-of-type { margin-top: 0; }
+.chip-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.effect-chip {
+  font-family: var(--font-hand-2);
+  font-size: 14px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid var(--border-3);
+  border-radius: 10px;
+  padding: 7px 12px;
+}
+.effect-chip.is-active {
+  background: var(--cobalt);
+  border-color: var(--ink);
+  color: #fff;
 }
 
 /* ── Folder shelf (recipe folders) ─────────────────────────────────── */

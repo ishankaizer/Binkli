@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { PlacedImage } from '../lib/imageNode';
+import { buildFilter, type PlacedImage } from '../lib/imageNode';
 
 interface ImageNodeProps {
   image: PlacedImage;
@@ -67,10 +67,13 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
     dragRef.current = null;
   };
 
+  const filter = buildFilter(image);
+  const isPolaroid = image.layers.includes('polaroid');
+
   return (
     <div
       ref={nodeRef}
-      className={`image-node${selected ? ' selected' : ''}`}
+      className={`image-node${selected ? ' selected' : ''}${isPolaroid ? ' polaroid' : ''}`}
       style={{
         left: image.x,
         top: image.y,
@@ -88,6 +91,7 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
         src={image.src}
         alt=""
         draggable={false}
+        style={filter ? { filter } : undefined}
         onLoad={(e) => {
           if (loadedRef.current) return;
           loadedRef.current = true;
@@ -97,6 +101,10 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
           }
         }}
       />
+
+      {image.layers.includes('grain') && <div className="image-node-grain" />}
+      {image.layers.includes('halftone') && <div className="image-node-halftone" />}
+      {image.layers.includes('vhs') && <div className="image-node-vhs" />}
 
       {selected && (
         <>

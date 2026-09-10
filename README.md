@@ -13,15 +13,17 @@ Vite + React rebuild described below. Work here.
 as a read-only reference for what NOT to do (see "Why this is a rebuild").
 Do not build features there.
 
-**Deploy status (as of 2026-09-10):** `https://binkli.vercel.app/` is still
-serving the OLD app from `binkli-reference` — that Vercel project is
-connected to `github.com/ishankaizer/Binkli`, and this rebuild has been
-pushed there as branch `rebuild` (not yet production). To make the rebuild
-go live at that URL, in the Vercel dashboard: Project Settings → Git →
-Production Branch → switch to `rebuild`, and Project Settings → General →
-Framework Preset → switch from Next.js to Vite. Until that switch happens,
-the live URL and this codebase are **not** the same thing — don't assume
-what's live matches what's in this folder.
+**Deploy status (as of 2026-09-11): LIVE.** `https://binkli.vercel.app/`
+serves this rebuild. It's connected to `github.com/ishankaizer/Binkli`;
+Vercel's "Production Branch" setting was greyed out/disabled in the
+dashboard for this project (cause unconfirmed), so instead of switching
+branches there, the rebuild was pushed directly onto the branch Vercel
+already tracks (`claude/image-effects-editor-app-Ixmsa`). Framework Preset
+is set to Vite, output directory left at the Vite default (`dist`). The
+`rebuild` branch also exists with the same content (redundant, harmless).
+To ship a change: commit, then `git push origin rebuild && git push origin
+rebuild:claude/image-effects-editor-app-Ixmsa` — a git push permission rule
+is set in `.claude/settings.local.json` so this runs without a prompt.
 
 ## What this is
 
@@ -118,13 +120,15 @@ src/
     textures.ts                NOTEBOOKS (paper types) + SCENES (backdrops) + TEXTURES registry
     stickers.ts                STICKERS registry + pickStickers() helper
     folders.ts                 FOLDERS registry (recipe-card content)
+    imageNode.ts                PlacedImage type, createPlacedImage(), buildFilter(), TONES/LAYERS
   components/
     SplashScreen.tsx           landing screen — matches splash2.png
-    TopBar.tsx                 paper/scene pickers, recipes/clear/export buttons
-    NotebookCanvas.tsx         the page surface; .pan-layer is where image nodes will live
+    TopBar.tsx                 paper/scene pickers, recipes/clear-all(wired)/export buttons
+    NotebookCanvas.tsx         the page surface; owns drag-drop/file-picker import + position clamping
+    ImageNode.tsx              a placed photo: move/resize(aspect-locked)/rotate/delete/select
     CanvasDecor.tsx            ambient washi tape + placed stickers on the canvas
-    EffectsPanel.tsx           right rail; real torn-paper edge image as the divider
-    FolderShelf.tsx            bottom drawer of recipe-folder cards
+    EffectsPanel.tsx           right rail; tone (radio) + layers (toggle) controls for the selected photo
+    FolderShelf.tsx            bottom drawer of recipe-folder cards (display-only, not wired to effects yet)
 scripts/
   cut_assets.py                 sticker/folder background removal (flood-fill)
   make_torn_paper.py            generates the torn-paper texture PNGs
@@ -138,12 +142,23 @@ references/                        78 design reference images
 1. Scaffold — **DONE**
 2. Shell + canvas (topbar, notebook page, effects rail frame) — **DONE**
 3. Real assets integrated (textures, stickers, folders wired into shell) — **DONE**
-4. Image nodes (drag-and-drop import, place/select/move/resize/rotate on
-   `.pan-layer` in `NotebookCanvas.tsx`) — **NEXT, not started.**
-   `App.tsx` currently hardcodes `hasContent = false`; `.pan-layer` is an
-   empty div.
-5. Effects engine (blur, halftone, polaroid, VHS, riso — refs in
-   `references/08-effects-looks/`) — not started
+4. Image nodes — **DONE (2026-09-11).** Drag-and-drop or click-to-browse
+   import, move/resize(aspect-locked)/rotate via handles, delete via button
+   or Delete/Backspace, topbar "clear all" wired up. `ImageNode.tsx` +
+   `lib/imageNode.ts`. Position is clamped so a drag can never push a photo
+   fully outside the notebook's clipped bounds (was a real bug, now fixed).
+5. Effects engine — **DONE (2026-09-11), basic version.** Each photo has one
+   `tone` (`none` / `duotone` / `vintage` / `grayscale`, mutually exclusive —
+   duotone is a true per-pixel effect via an SVG `feComponentTransfer` filter
+   in `App.tsx`, id `duotone-riso`) plus freely-stackable `layers` (`blur`,
+   `grain`, `halftone`, `vhs`, `polaroid`). Grain reuses the real
+   `paper-photocopy.jpg` scan at `background-size: cover` (not tiled — that
+   texture is soft photocopier banding, not fine grain, so tiling it small
+   produced a blocky checkerboard). Halftone/VHS-scanlines are generated CSS
+   patterns, not scrapbook assets, so the real-assets rule doesn't apply to
+   them. Not yet built: per-effect intensity sliders, canvas-based true
+   halftone (currently a dot-pattern overlay approximation), effect stack
+   reordering, recipe-folder presets wiring to this engine.
 6. Export + gradient lab + recipe-folder wiring (folders are currently
    display-only, clicking a card does nothing yet) — not started
 
