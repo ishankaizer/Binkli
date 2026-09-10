@@ -147,18 +147,26 @@ references/                        78 design reference images
    or Delete/Backspace, topbar "clear all" wired up. `ImageNode.tsx` +
    `lib/imageNode.ts`. Position is clamped so a drag can never push a photo
    fully outside the notebook's clipped bounds (was a real bug, now fixed).
-5. Effects engine — **DONE (2026-09-11), basic version.** Each photo has one
-   `tone` (`none` / `duotone` / `vintage` / `grayscale`, mutually exclusive —
-   duotone is a true per-pixel effect via an SVG `feComponentTransfer` filter
-   in `App.tsx`, id `duotone-riso`) plus freely-stackable `layers` (`blur`,
-   `grain`, `halftone`, `vhs`, `polaroid`). Grain reuses the real
-   `paper-photocopy.jpg` scan at `background-size: cover` (not tiled — that
-   texture is soft photocopier banding, not fine grain, so tiling it small
-   produced a blocky checkerboard). Halftone/VHS-scanlines are generated CSS
-   patterns, not scrapbook assets, so the real-assets rule doesn't apply to
-   them. Not yet built: per-effect intensity sliders, canvas-based true
-   halftone (currently a dot-pattern overlay approximation), effect stack
-   reordering, recipe-folder presets wiring to this engine.
+5. Effects engine — **DONE, expanded (2026-09-11).** Each photo has one
+   `tone` (8 options: `none`, `duotone-blue`, `duotone-red`, `sepia`,
+   `vintage`, `grayscale`, `invert`, `posterize` — mutually exclusive) plus
+   freely-stackable `layers` (8: `blur`, `grain`, `halftone`, `vhs`, `noise`,
+   `vignette`, `fade`, `polaroid`), each with a 0-100 intensity. Real per-
+   pixel SVG filters (not CSS approximations) defined once in `App.tsx`:
+   `#duotone-blue`, `#duotone-red`, `#posterize` (feComponentTransfer),
+   `#noise-gen` (feTurbulence — genuine procedural grain, not an asset or a
+   generated CSS pattern). Grain reuses the real `paper-photocopy.jpg` scan
+   at `background-size: cover` (not tiled — that texture is soft photocopier
+   banding, not fine grain, so tiling it small produced a blocky
+   checkerboard). `EffectsPanel.tsx` shows every chip as a **live-filtered
+   thumbnail swatch** of the selected photo (`Swatch` sub-component, reuses
+   `buildFilter()` + the same overlay CSS classes as `ImageNode`) so you see
+   what an effect does before applying it, plus an "adjust" section with
+   intensity sliders for whichever tunable layers are currently active.
+   `lib/imageNode.ts`: `ActiveLayer` type, `buildFilter()`, `layerStrength()`.
+   Not yet built: canvas-based true halftone (currently a CSS dot-pattern
+   overlay approximation), effect stack reordering, recipe-folder presets
+   wiring to this engine, chromatic-aberration/pixelate/sharpen effects.
 6. Export + gradient lab + recipe-folder wiring (folders are currently
    display-only, clicking a card does nothing yet) — not started
 

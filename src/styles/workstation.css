@@ -188,7 +188,6 @@
   background-size: cover;
   background-position: center;
   mix-blend-mode: overlay;
-  opacity: 0.45;
   pointer-events: none;
 }
 
@@ -200,7 +199,6 @@
   background-image: radial-gradient(circle, rgba(20, 18, 31, 0.85) 38%, transparent 40%);
   background-size: 5px 5px;
   mix-blend-mode: multiply;
-  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -215,6 +213,24 @@
   );
   box-shadow: inset 3px 0 0 rgba(232, 48, 48, 0.28), inset -3px 0 0 rgba(45, 59, 204, 0.28);
   mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Noise layer: procedural feTurbulence static (see #noise-gen in App.tsx),
+   not a generated CSS pattern and not an asset — genuine per-pixel noise */
+.image-node-noise {
+  position: absolute;
+  inset: 0;
+  filter: url(#noise-gen);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Vignette layer: darkened corners */
+.image-node-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(20, 18, 31, 0.75) 115%);
   pointer-events: none;
 }
 .image-node-handle {
@@ -303,6 +319,17 @@
   color: var(--ink);
   /* Warm cream matching the torn-edge PNG fill */
   background-color: #F4EAD2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panel-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: -10px;
+  padding-right: 10px;
 }
 /* Faint real-paper grain over the cream (kept subtle so it doesn't go muddy) */
 .effects-panel::before {
@@ -373,25 +400,77 @@
   margin: 18px 0 8px;
 }
 .panel-group-label:first-of-type { margin-top: 0; }
-.chip-row {
+.chip-grid {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 .effect-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
   font-family: var(--font-hand-2);
-  font-size: 14px;
+  font-size: 12px;
   color: var(--ink);
   background: rgba(255, 255, 255, 0.7);
   border: 2px solid var(--border-3);
   border-radius: 10px;
-  padding: 7px 12px;
+  padding: 6px;
+  text-align: center;
 }
 .effect-chip.is-active {
-  background: var(--cobalt);
-  border-color: var(--ink);
-  color: #fff;
+  background: var(--cobalt-bg);
+  border-color: var(--cobalt);
+}
+.fx-swatch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+.fx-swatch img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fx-sliders {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fx-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fx-slider-label {
+  font-family: var(--font-hand);
+  font-size: 14px;
+  color: var(--text-2);
+  width: 58px;
+  flex: none;
+}
+.fx-slider-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--cobalt);
+}
+.fx-slider-remove {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--red-bg);
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1;
 }
 
 /* ── Folder shelf (recipe folders) ─────────────────────────────────── */

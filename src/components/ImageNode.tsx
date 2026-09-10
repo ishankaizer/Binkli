@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { buildFilter, type PlacedImage } from '../lib/imageNode';
+import { buildFilter, layerStrength, type PlacedImage } from '../lib/imageNode';
 
 interface ImageNodeProps {
   image: PlacedImage;
@@ -68,7 +68,12 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
   };
 
   const filter = buildFilter(image);
-  const isPolaroid = image.layers.includes('polaroid');
+  const isPolaroid = image.layers.some((l) => l.id === 'polaroid');
+  const grain = layerStrength(image, 'grain');
+  const halftone = layerStrength(image, 'halftone');
+  const vhs = layerStrength(image, 'vhs');
+  const noise = layerStrength(image, 'noise');
+  const vignette = layerStrength(image, 'vignette');
 
   return (
     <div
@@ -102,9 +107,11 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
         }}
       />
 
-      {image.layers.includes('grain') && <div className="image-node-grain" />}
-      {image.layers.includes('halftone') && <div className="image-node-halftone" />}
-      {image.layers.includes('vhs') && <div className="image-node-vhs" />}
+      {grain > 0 && <div className="image-node-grain" style={{ opacity: grain * 0.55 }} />}
+      {halftone > 0 && <div className="image-node-halftone" style={{ opacity: halftone * 0.6 }} />}
+      {vhs > 0 && <div className="image-node-vhs" style={{ opacity: vhs }} />}
+      {noise > 0 && <div className="image-node-noise" style={{ opacity: noise * 0.5 }} />}
+      {vignette > 0 && <div className="image-node-vignette" style={{ opacity: vignette }} />}
 
       {selected && (
         <>
