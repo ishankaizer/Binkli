@@ -1,0 +1,442 @@
+/* ── Workstation shell ─────────────────────────────────────────────── */
+
+.workstation {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.scene-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: background 0.5s ease;
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────── */
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+
+.wordmark {
+  font-family: var(--font-marker);
+  font-size: 30px;
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  transform: rotate(-3deg);
+  user-select: none;
+}
+.wordmark .dot { color: var(--red); }
+
+.topbar-spacer { flex: 1; }
+
+/* Signature sticker button */
+.sticker-btn {
+  font-family: var(--font-hand-2);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 14px;
+  box-shadow: var(--sticker-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.sticker-btn:hover { transform: translateY(-2px); box-shadow: var(--sticker-shadow-lg); }
+.sticker-btn.is-active { background: var(--butter-bg); }
+.sticker-btn.accent { background: var(--cobalt); color: #fff; }
+.sticker-btn.accent:hover { background: #2431a8; }
+
+.picker-group {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--sticker-shadow);
+}
+.picker-chip {
+  font-family: var(--font-hand);
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  padding: 5px 11px;
+  border-radius: 9px;
+}
+.picker-chip.is-active { background: var(--ink); color: var(--butter); }
+.picker-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  align-self: center;
+  padding-left: 4px;
+}
+
+/* ── Canvas / notebook page ────────────────────────────────────────── */
+
+.canvas-area {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+}
+
+.notebook {
+  position: relative;
+  width: min(62vw, 780px);
+  aspect-ratio: 5 / 6;
+  max-height: 84vh;
+  background-size: cover;
+  background-position: center;
+  border-radius: 3px;
+  box-shadow:
+    0 2px 0 rgba(20, 18, 31, 0.06),
+    0 26px 60px rgba(20, 18, 31, 0.24);
+  transform: rotate(-0.6deg);
+  overflow: hidden;
+}
+/* Real paper stays real — this is only the ruled overlay for the 'ruled' page */
+.notebook.ruled::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 33px,
+    rgba(45, 120, 200, 0.20) 33px 34px
+  );
+}
+/* Red margin line — a real notebook has one; this is a line, not redrawn paper */
+.notebook .margin-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 11%;
+  width: 2px;
+  background: rgba(232, 48, 48, 0.42);
+  pointer-events: none;
+}
+
+.pan-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* Empty-state hint */
+.empty-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+  padding: 0 12%;
+}
+.empty-hint .marker {
+  font-family: var(--font-marker);
+  font-size: clamp(26px, 4vw, 42px);
+  color: var(--ink);
+  transform: rotate(-2deg);
+  line-height: 1.05;
+}
+.empty-hint .sub {
+  font-family: var(--font-hand);
+  font-size: 20px;
+  color: var(--text-2);
+  margin-top: 10px;
+}
+
+/* ── Torn-paper effects panel ──────────────────────────────────────── */
+
+.effects-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: 320px;
+  padding: 74px 22px 24px 46px;
+  color: var(--ink);
+  /* Warm cream matching the torn-edge PNG fill */
+  background-color: #F4EAD2;
+}
+/* Faint real-paper grain over the cream (kept subtle so it doesn't go muddy) */
+.effects-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/textures/paper-photocopy.jpg');
+  background-size: cover;
+  background-position: right center;
+  mix-blend-mode: multiply;
+  opacity: 0.12;
+  pointer-events: none;
+}
+/* The REAL torn-paper strip: a scanned-grain PNG with irregular alpha edge.
+   Its drop-shadow follows the true torn silhouette, lifting it off the page. */
+.panel-tear {
+  position: absolute;
+  top: 0;
+  left: -78px;
+  height: 100%;
+  width: auto;
+  pointer-events: none;
+  filter: drop-shadow(-7px 0 12px rgba(20, 18, 31, 0.22));
+}
+.panel-title {
+  position: relative;
+  font-family: var(--font-marker);
+  font-size: 24px;
+  color: var(--ink);
+  transform: rotate(-2deg);
+  margin-bottom: 4px;
+}
+.panel-divider {
+  position: relative;
+  display: block;
+  width: calc(100% + 30px);
+  margin: 16px 0 16px -20px;
+  height: 22px;
+  object-fit: cover;
+  pointer-events: none;
+}
+.panel-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 18px;
+}
+.panel-slot {
+  font-family: var(--font-hand);
+  font-size: 16px;
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px dashed var(--border-3);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+}
+
+/* ── Folder shelf (recipe folders) ─────────────────────────────────── */
+
+.folder-shelf {
+  position: absolute;
+  left: 0;
+  right: 320px;
+  bottom: 0;
+  z-index: 60;
+  background: var(--surface-3);
+  border-top: 3px solid var(--ink);
+  box-shadow: 0 -12px 30px rgba(20, 18, 31, 0.16);
+  padding: 12px 20px 18px;
+}
+.folder-shelf-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.folder-shelf-title {
+  font-family: var(--font-marker);
+  font-size: 18px;
+  color: var(--ink);
+}
+.folder-shelf-hint {
+  font-family: var(--font-hand);
+  font-size: 15px;
+  color: var(--text-3);
+}
+.folder-shelf-close {
+  margin-left: auto;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  padding: 0 6px;
+}
+.folder-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 6px 2px 10px;
+}
+.folder-card {
+  flex: 0 0 auto;
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 6px;
+}
+.folder-card img {
+  width: 116px;
+  height: auto;
+  filter: drop-shadow(2px 4px 5px rgba(20, 18, 31, 0.22));
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.folder-card:hover img { transform: translateY(-6px) rotate(-2deg); }
+.folder-card-label {
+  font-family: var(--font-hand-2);
+  font-size: 16px;
+  color: var(--ink);
+}
+.folder-card-blurb {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ── Splash screen ─────────────────────────────────────────────────── */
+
+.splash {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.splash-wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(251, 246, 238, 0.72) 0%, rgba(251, 246, 238, 0.5) 45%, rgba(251, 246, 238, 0.2) 100%);
+}
+.splash-floater {
+  position: absolute;
+  z-index: 1;
+  filter: drop-shadow(3px 6px 7px rgba(20, 18, 31, 0.3));
+  user-select: none;
+  pointer-events: none;
+}
+.splash-center {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 560px;
+  padding: 0 24px;
+}
+.splash-kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+.splash-title {
+  font-family: var(--font-marker);
+  font-size: clamp(56px, 10vw, 104px);
+  line-height: 0.92;
+  color: var(--ink);
+  margin: 0;
+  transform: rotate(-2deg);
+}
+.splash-sub {
+  font-family: var(--font-hand);
+  font-size: 22px;
+  color: var(--text-2);
+  margin: 16px auto 0;
+  max-width: 420px;
+}
+.splash-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+.splash-start {
+  font-family: var(--font-hand-2);
+  font-size: 22px;
+  color: #fff;
+  background: var(--cobalt);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 14px 34px;
+  box-shadow: var(--sticker-shadow-lg);
+}
+.splash-start:hover { transform: translateY(-3px); box-shadow: 0 8px 0 var(--ink); }
+.splash-skip {
+  font-family: var(--font-hand);
+  font-size: 17px;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--red);
+}
+
+/* ── Scrapbook decor (washi tape, doodles, stickers) ───────────────── */
+
+.washi {
+  position: absolute;
+  z-index: 4;
+  height: 34px;
+  width: 116px;
+  opacity: 0.9;
+  box-shadow: 0 2px 6px rgba(20, 18, 31, 0.14);
+  mix-blend-mode: multiply;
+}
+.washi.pink  { background: repeating-linear-gradient(45deg, #ffb6d9 0 9px, #ff9ec9 9px 18px); }
+.washi.mint  { background: repeating-linear-gradient(45deg, #b6e9d4 0 9px, #9fdcc2 9px 18px); }
+
+.canvas-sticker {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(2px 4px 5px rgba(20, 18, 31, 0.28));
+}
+
+.doodle-star {
+  position: absolute;
+  z-index: 4;
+  font-family: var(--font-marker);
+  color: var(--red);
+  pointer-events: none;
+  user-select: none;
+}
+.doodle-note {
+  position: absolute;
+  z-index: 4;
+  font-family: var(--font-hand);
+  color: var(--cobalt);
+  transform: rotate(-6deg);
+  pointer-events: none;
+  user-select: none;
+}

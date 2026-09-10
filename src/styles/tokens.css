@@ -1,0 +1,61 @@
+/* ─────────────────────────────────────────────────────────────
+   Binkli design tokens — ported from the original globals.css.
+   Colors and shadows carried over verbatim so the visual identity
+   stays continuous; font vars now point at the Google fonts loaded
+   in index.html (no Next.js font loader here).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Warm paper backgrounds */
+  --bg:        #FBF6EE;
+  --paper:     #FAF4E6;
+  --surface:   #FFFFFF;
+  --surface-2: #FAF5EC;
+  --surface-3: #F2EBDC;
+
+  --border:   rgba(20, 18, 31, 0.07);
+  --border-2: rgba(20, 18, 31, 0.13);
+  --border-3: rgba(20, 18, 31, 0.22);
+
+  /* Primary accent (bold) */
+  --yellow:      #FFD600;
+  --yellow-bg:   #FFF7C2;
+  --cobalt:      #2D3BCC;
+  --cobalt-bg:   #E0E5FF;
+  --cobalt-glow: rgba(45, 59, 204, 0.32);
+  --red:         #E83030;
+  --red-bg:      #FFE5E5;
+  --red-glow:    rgba(232, 48, 48, 0.28);
+  --orange:      #FF5500;
+
+  /* Pastel system */
+  --pink:     #FFB6D9;  --pink-bg:     #FFE9F3;  --pink-ink:     #6A1A3A;
+  --peach:    #FFC9A8;  --peach-bg:    #FFF1E5;  --peach-ink:    #5A2A0A;
+  --butter:   #FFE39A;  --butter-bg:   #FFF7DA;  --butter-ink:   #5A4A00;
+  --mint:     #B6E9D4;  --mint-bg:     #E8F8F0;  --mint-ink:     #00533A;
+  --lavender: #C9BFEC;  --lavender-bg: #F1ECFB;  --lavender-ink: #2A1A5A;
+  --sky:      #B8D9F5;  --sky-bg:      #E8F2FC;  --sky-ink:      #0A2A5A;
+  --coral:    #FFA08A;  --coral-bg:    #FFEDE5;  --coral-ink:    #5A1A0A;
+  --cream:    #F5EBD6;  --cream-bg:    #FAF4E6;
+
+  --ink:    #14121F;
+  --text:   #14121F;
+  --text-2: #4A4858;
+  --text-3: #8A8898;
+
+  --shadow-sm:   0 2px 8px rgba(20, 18, 31, 0.05);
+  --shadow-md:   0 6px 22px rgba(20, 18, 31, 0.08);
+  --shadow-lg:   0 18px 60px rgba(20, 18, 31, 0.14);
+  --shadow-card: 0 6px 0 var(--ink), 0 10px 30px rgba(20, 18, 31, 0.10);
+
+  /* Signature offset "sticker button" shadow */
+  --sticker-shadow: 0 3px 0 var(--ink);
+  --sticker-shadow-lg: 0 5px 0 var(--ink);
+
+  /* Fonts — real families (Google Fonts, see index.html) */
+  --font-marker: 'Permanent Marker', cursive;
+  --font-hand:   'Kalam', cursive;
+  --font-hand-2: 'Patrick Hand', cursive;
+  --font-mono:   'IBM Plex Mono', monospace;
+  --font-sans:   'Plus Jakarta Sans', system-ui, sans-serif;
+}
