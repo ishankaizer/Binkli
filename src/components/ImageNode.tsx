@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { buildFilter, layerStrength, type PlacedImage } from '../lib/imageNode';
+import { applyEffectLayer, applyGrainOverlay } from '../lib/effects';
+import type { PlacedImage } from '../lib/imageNode';
 
 interface ImageNodeProps {
   image: PlacedImage;
@@ -24,8 +25,72 @@ interface DragState {
 
 export default function ImageNode({ image, selected, onSelect, onUpdate, onDelete }: ImageNodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const loadedRef = useRef(false);
+
+  // Raster compositing: fold the effect stack in order (each layer's output
+  // feeds the next), then the grain overlay on top. Order-dependent by design.
+  const render = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img || !img.complete) return;
+
+    const w = image.width, h = image.height;
+    canvas.width = w;
+    canvas.height = h;
+
+    let workCanvas = document.createElement('canvas');
+    workCanvas.width = w;
+    workCanvas.height = h;
+    workCanvas.getContext('2d', { willReadFrequently: true })!.drawImage(img, 0, 0, w, h);
+
+    for (const layer of image.effectStack) {
+      if (layer.visible === false) continue;
+      const result = applyEffectLayer(workCanvas, layer, w, h);
+      if (layer.opacity >= 0.99) {
+        workCanvas = result;
+      } else {
+        const blended = document.createElement('canvas');
+        blended.width = w;
+        blended.height = h;
+        const bctx = blended.getContext('2d', { willReadFrequently: true })!;
+        bctx.drawImage(workCanvas, 0, 0);
+        bctx.globalAlpha = layer.opacity;
+        bctx.drawImage(result, 0, 0);
+        bctx.globalAlpha = 1;
+        workCanvas = blended;
+      }
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(workCanvas, 0, 0);
+
+    if (image.grain > 0) applyGrainOverlay(ctx, w, h, image.grain);
+  }, [image.effectStack, image.grain, image.width, image.height]);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = image.src;
+    img.onload = () => {
+      imgRef.current = img;
+      if (!loadedRef.current) {
+        loadedRef.current = true;
+        if (img.naturalWidth && img.naturalHeight) {
+          onUpdate(image.id, { height: image.width / (img.naturalWidth / img.naturalHeight) });
+          return; // the height update re-triggers render() via the effect below
+        }
+      }
+      render();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [image.src]);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) render();
+  }, [render]);
 
   const beginDrag = (mode: DragMode) => (e: ReactPointerEvent) => {
     e.stopPropagation();
@@ -67,18 +132,10 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
     dragRef.current = null;
   };
 
-  const filter = buildFilter(image);
-  const isPolaroid = image.layers.some((l) => l.id === 'polaroid');
-  const grain = layerStrength(image, 'grain');
-  const halftone = layerStrength(image, 'halftone');
-  const vhs = layerStrength(image, 'vhs');
-  const noise = layerStrength(image, 'noise');
-  const vignette = layerStrength(image, 'vignette');
-
   return (
     <div
       ref={nodeRef}
-      className={`image-node${selected ? ' selected' : ''}${isPolaroid ? ' polaroid' : ''}`}
+      className={`image-node${selected ? ' selected' : ''}`}
       style={{
         left: image.x,
         top: image.y,
@@ -92,26 +149,7 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
       onPointerUp={onDragEnd}
       onClick={(e) => e.stopPropagation()}
     >
-      <img
-        src={image.src}
-        alt=""
-        draggable={false}
-        style={filter ? { filter } : undefined}
-        onLoad={(e) => {
-          if (loadedRef.current) return;
-          loadedRef.current = true;
-          const el = e.currentTarget;
-          if (el.naturalWidth && el.naturalHeight) {
-            onUpdate(image.id, { height: image.width / (el.naturalWidth / el.naturalHeight) });
-          }
-        }}
-      />
-
-      {grain > 0 && <div className="image-node-grain" style={{ opacity: grain * 0.55 }} />}
-      {halftone > 0 && <div className="image-node-halftone" style={{ opacity: halftone * 0.6 }} />}
-      {vhs > 0 && <div className="image-node-vhs" style={{ opacity: vhs }} />}
-      {noise > 0 && <div className="image-node-noise" style={{ opacity: noise * 0.5 }} />}
-      {vignette > 0 && <div className="image-node-vignette" style={{ opacity: vignette }} />}
+      <canvas ref={canvasRef} width={image.width} height={image.height} />
 
       {selected && (
         <>

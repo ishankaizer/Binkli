@@ -47,7 +47,7 @@ vectors" below.
 
 - Vite + React 19 + TypeScript (not Next.js — deliberate change from the original)
 - Framer Motion for animation
-- Canvas 2D for image effects (planned, not yet wired)
+- Canvas 2D for image effects — raster, order-dependent layer stack (see Status #5)
 - Plain CSS with design tokens (`src/styles/tokens.css`), no CSS framework
 - Fonts via Google Fonts `<link>` in `index.html` (no Next.js font loader)
 
@@ -120,14 +120,16 @@ src/
     textures.ts                NOTEBOOKS (paper types) + SCENES (backdrops) + TEXTURES registry
     stickers.ts                STICKERS registry + pickStickers() helper
     folders.ts                 FOLDERS registry (recipe-card content)
-    imageNode.ts                PlacedImage type, createPlacedImage(), buildFilter(), TONES/LAYERS
+    imageNode.ts                PlacedImage type (x/y/width/height/rotation/effectStack/grain), createPlacedImage()
+    effects.ts                  the raster effects engine — ~30 canvas-based effect renderers + applyEffectLayer()
+    effectCatalog.ts             EFFECT_CATALOG (7 categories x effect defs) for the "add effect" picker
   components/
     SplashScreen.tsx           landing screen — matches splash2.png
     TopBar.tsx                 paper/scene pickers, recipes/clear-all(wired)/export buttons
     NotebookCanvas.tsx         the page surface; owns drag-drop/file-picker import + position clamping
-    ImageNode.tsx              a placed photo: move/resize(aspect-locked)/rotate/delete/select
+    ImageNode.tsx              a placed photo: <canvas> raster compositing + move/resize/rotate/delete/select
     CanvasDecor.tsx            ambient washi tape + placed stickers on the canvas
-    EffectsPanel.tsx           right rail; tone (radio) + layers (toggle) controls for the selected photo
+    EffectsPanel.tsx           right rail; ordered effect-stack editor (add/reorder/remove/opacity/params) + grain
     FolderShelf.tsx            bottom drawer of recipe-folder cards (display-only, not wired to effects yet)
 scripts/
   cut_assets.py                 sticker/folder background removal (flood-fill)
@@ -147,26 +149,52 @@ references/                        78 design reference images
    or Delete/Backspace, topbar "clear all" wired up. `ImageNode.tsx` +
    `lib/imageNode.ts`. Position is clamped so a drag can never push a photo
    fully outside the notebook's clipped bounds (was a real bug, now fixed).
-5. Effects engine — **DONE, expanded (2026-09-11).** Each photo has one
-   `tone` (8 options: `none`, `duotone-blue`, `duotone-red`, `sepia`,
-   `vintage`, `grayscale`, `invert`, `posterize` — mutually exclusive) plus
-   freely-stackable `layers` (8: `blur`, `grain`, `halftone`, `vhs`, `noise`,
-   `vignette`, `fade`, `polaroid`), each with a 0-100 intensity. Real per-
-   pixel SVG filters (not CSS approximations) defined once in `App.tsx`:
-   `#duotone-blue`, `#duotone-red`, `#posterize` (feComponentTransfer),
-   `#noise-gen` (feTurbulence — genuine procedural grain, not an asset or a
-   generated CSS pattern). Grain reuses the real `paper-photocopy.jpg` scan
-   at `background-size: cover` (not tiled — that texture is soft photocopier
-   banding, not fine grain, so tiling it small produced a blocky
-   checkerboard). `EffectsPanel.tsx` shows every chip as a **live-filtered
-   thumbnail swatch** of the selected photo (`Swatch` sub-component, reuses
-   `buildFilter()` + the same overlay CSS classes as `ImageNode`) so you see
-   what an effect does before applying it, plus an "adjust" section with
-   intensity sliders for whichever tunable layers are currently active.
-   `lib/imageNode.ts`: `ActiveLayer` type, `buildFilter()`, `layerStrength()`.
-   Not yet built: canvas-based true halftone (currently a CSS dot-pattern
-   overlay approximation), effect stack reordering, recipe-folder presets
-   wiring to this engine, chromatic-aberration/pixelate/sharpen effects.
+5. Effects engine — **rebuilt as a raster, order-dependent stack (2026-09-11).**
+   Superseded the earlier CSS-filter version (tone + fixed-order layers) at
+   the user's explicit request: "photoshop style editing, raster based and
+   proper layer based effects... if I place a gaussian blur and then another
+   effect on top, it should be different than if the effect was applied
+   before." Ported wholesale from the pre-rebuild Next.js app
+   (`binkli-reference/app/lib/effects.ts`), which was already a
+   framework-agnostic canvas engine — copied close to verbatim into
+   `lib/effects.ts`.
+   - **Data model** (`lib/imageNode.ts`): `PlacedImage.effectStack:
+     EffectLayer[]` — an ordered array, each `{ id, type, opacity, params }`.
+     `PlacedImage.grain: number` is a separate always-last overlay (matches
+     the old app's model).
+   - **Rendering** (`ImageNode.tsx`): the node is a `<canvas>`, not an `<img>`.
+     `render()` folds the stack in array order — each layer's
+     `applyEffectLayer()` output becomes the next layer's input (with opacity
+     alpha-blended against the pre-layer state when < 100%) — then
+     `applyGrainOverlay()` on top. This is why order matters: reordering two
+     layers in the stack changes which canvas each one reads from. Verified
+     directly: applying Blur-then-Duotone vs Duotone-then-Blur to the same
+     photo produces byte-different canvas output (`canvas.toDataURL()`
+     diffed programmatically in-session, not just eyeballed).
+   - **Catalog** (`lib/effectCatalog.ts`): ~30 effect types across 7
+     categories (Foundation: exposure/contrast/brightness/saturation/
+     hue-shift/posterize; Color: gradient-map/duotone/overprint/
+     cross-process/bleach-bypass/two-tone; Simplify: blur/field-blur/pixelate;
+     Print: dot-grid/concentric/scanline halftones, risograph, bitmap,
+     dither, ASCII, stamp, word-fill; Distort: chromatic/VHS-tape/glass-warp/
+     motion-blur/radial-zoom; Light: neon/vignette; Final: sharpen/polaroid-
+     frame/VHS-frame/texture-overlay) — this is the full catalog the user
+     had built in the old app, not a trimmed-down subset.
+   - **UI** (`EffectsPanel.tsx`): "add effect" buttons grouped by category;
+     an ordered stack list with move-up/down, per-layer opacity slider, a
+     generic param editor (`PARAM_CONFIG` maps each param key to a
+     number/color/select/text control) driven by whatever keys are present
+     on that layer's `params` object, and a remove button; a grain slider.
+     Deliberately plain — the user said visual design will be decided later,
+     so effort went into engine correctness and catalog completeness, not
+     polish.
+   - Perf: temp canvases created with `{ willReadFrequently: true }` — many
+     effects (risograph, halftone, ASCII, bitmap) do per-cell `getImageData`
+     reads in a loop, which Chrome flags without that hint.
+   - **Not ported from the old app**: cutout/background-removal
+     (`lib/cutout.ts`, 289 lines — a separate subsystem, deliberately
+     deferred rather than rushed), recipe presets (`lib/recipes.ts`) wiring
+     to this engine, gradient-lab. Flag if these matter for a future pass.
 6. Export + gradient lab + recipe-folder wiring (folders are currently
    display-only, clicking a card does nothing yet) — not started
 
@@ -184,5 +212,5 @@ IBM Plex Mono (labels/mono), Plus Jakarta Sans (UI sans).
 - Keep the scrapbook aesthetic consistent; no emojis in code or UI copy.
 - Minimal code comments — only for non-obvious WHY (e.g. why flood-fill beat
   rembg), never restating what the code does.
-- No git repo initialized yet for this project (`X:\CLAUDE\binkli` has no
-  `.git`) — ask before setting one up or pushing anywhere.
+- Git push runs without a permission prompt (rule set in
+  `.claude/settings.local.json`) — still push deliberately, not reflexively.

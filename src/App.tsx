@@ -63,50 +63,6 @@ export default function App() {
 
   return (
     <div className="workstation">
-      {/* Real per-pixel effects (SVG filters), not CSS approximations. Used via
-          `filter: url(#id)` — see buildFilter() in lib/imageNode.ts. */}
-      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
-        <defs>
-          {/* Riso two-colour duotone: cobalt shadow -> butter-yellow highlight */}
-          <filter id="duotone-blue">
-            <feColorMatrix
-              type="matrix"
-              values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0"
-            />
-            <feComponentTransfer>
-              <feFuncR type="table" tableValues="0.176 1" />
-              <feFuncG type="table" tableValues="0.231 0.839" />
-              <feFuncB type="table" tableValues="0.8 0" />
-            </feComponentTransfer>
-          </filter>
-          {/* Riso two-colour duotone: red shadow -> sky-blue highlight */}
-          <filter id="duotone-red">
-            <feColorMatrix
-              type="matrix"
-              values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0"
-            />
-            <feComponentTransfer>
-              <feFuncR type="table" tableValues="0.91 0.722" />
-              <feFuncG type="table" tableValues="0.188 0.851" />
-              <feFuncB type="table" tableValues="0.188 0.961" />
-            </feComponentTransfer>
-          </filter>
-          {/* Posterize: discrete color steps, print-plate look */}
-          <filter id="posterize">
-            <feComponentTransfer>
-              <feFuncR type="discrete" tableValues="0 0.33 0.66 1" />
-              <feFuncG type="discrete" tableValues="0 0.33 0.66 1" />
-              <feFuncB type="discrete" tableValues="0 0.33 0.66 1" />
-            </feComponentTransfer>
-          </filter>
-          {/* Procedural film-grain noise (feTurbulence), not an image asset */}
-          <filter id="noise-gen">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise" />
-            <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.7 0.7 0.7 0 0" />
-          </filter>
-        </defs>
-      </svg>
-
       <div className="scene-backdrop" style={{ background: backdrop.background }} />
 
       <TopBar

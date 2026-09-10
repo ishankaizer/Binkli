@@ -155,11 +155,12 @@
   cursor: grab;
   box-sizing: border-box;
 }
-.image-node img {
+/* The effect stack is raster (canvas), not CSS — see lib/effects.ts and
+   ImageNode.tsx's render(). This is the only visual rule the node needs. */
+.image-node canvas {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   border: 4px solid #fff;
   border-radius: 2px;
   box-shadow: 0 6px 18px rgba(20, 18, 31, 0.28);
@@ -167,71 +168,9 @@
   pointer-events: none;
   user-select: none;
 }
-.image-node.selected img {
+.image-node.selected canvas {
   outline: 2.5px dashed var(--cobalt);
   outline-offset: 4px;
-}
-.image-node img { transition: filter 0.15s ease; }
-
-/* Polaroid layer: asymmetric white frame, thicker at the bottom */
-.image-node.polaroid img {
-  border-width: 10px 10px 34px;
-}
-
-/* Grain layer: the REAL scanned photocopy texture, not a generated pattern.
-   Shown once at cover size (not tiled) — it's a soft banding scan, not fine
-   grain, so tiling it small just repeats the bands into a blocky checkerboard. */
-.image-node-grain {
-  position: absolute;
-  inset: 0;
-  background-image: url('/textures/paper-photocopy.jpg');
-  background-size: cover;
-  background-position: center;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-
-/* Halftone layer: generated dot-screen pattern (not a scrapbook asset, so the
-   real-assets rule doesn't apply — this is an algorithmic print effect) */
-.image-node-halftone {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(20, 18, 31, 0.85) 38%, transparent 40%);
-  background-size: 5px 5px;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-}
-
-/* VHS layer: scanlines + faint RGB fringing along the edges */
-.image-node-vhs {
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgba(20, 18, 31, 0.16) 0 1px,
-    transparent 1px 3px
-  );
-  box-shadow: inset 3px 0 0 rgba(232, 48, 48, 0.28), inset -3px 0 0 rgba(45, 59, 204, 0.28);
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-
-/* Noise layer: procedural feTurbulence static (see #noise-gen in App.tsx),
-   not a generated CSS pattern and not an asset — genuine per-pixel noise */
-.image-node-noise {
-  position: absolute;
-  inset: 0;
-  filter: url(#noise-gen);
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-
-/* Vignette layer: darkened corners */
-.image-node-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(20, 18, 31, 0.75) 115%);
-  pointer-events: none;
 }
 .image-node-handle {
   position: absolute;
@@ -400,78 +339,94 @@
   margin: 18px 0 8px;
 }
 .panel-group-label:first-of-type { margin-top: 0; }
-.chip-grid {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.effect-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  font-family: var(--font-hand-2);
-  font-size: 12px;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.7);
-  border: 2px solid var(--border-3);
-  border-radius: 10px;
-  padding: 6px;
-  text-align: center;
-}
-.effect-chip.is-active {
-  background: var(--cobalt-bg);
-  border-color: var(--cobalt);
-}
-.fx-swatch {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--surface-3);
-}
-.fx-swatch img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
 
-.fx-sliders {
+/* ── Effect stack editor — deliberately plain, look TBD later ───────── */
+
+.fx-stack {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.fx-slider-row {
+.fx-layer {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-3);
+  border-radius: 8px;
+  padding: 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+.fx-layer-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
-.fx-slider-label {
-  font-family: var(--font-hand);
-  font-size: 14px;
-  color: var(--text-2);
-  width: 58px;
-  flex: none;
+.fx-layer-index {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  width: 14px;
 }
-.fx-slider-row input[type='range'] {
+.fx-layer-name {
   flex: 1;
-  accent-color: var(--cobalt);
+  font-weight: 600;
+  color: var(--ink);
 }
-.fx-slider-remove {
-  flex: none;
+.fx-layer-head button {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: var(--red-bg);
-  color: var(--red);
-  font-size: 13px;
+  border: 1px solid var(--border-3);
+  background: #fff;
+  border-radius: 4px;
+  font-size: 11px;
   line-height: 1;
 }
+.fx-layer-head button:disabled { opacity: 0.35; }
+.fx-layer-remove {
+  color: var(--red);
+  border-color: var(--red-bg) !important;
+}
+
+.fx-param-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.fx-param-row span:first-child { width: 64px; flex: none; }
+.fx-param-row input[type='range'] { flex: 1; accent-color: var(--cobalt); }
+.fx-param-row input[type='color'] { width: 26px; height: 20px; padding: 0; border: 1px solid var(--border-3); }
+.fx-param-row input[type='text'],
+.fx-param-row select { flex: 1; font-size: 11px; }
+.fx-param-value { width: 28px; text-align: right; flex: none; font-family: var(--font-mono); }
+
+.fx-add-category { margin-bottom: 10px; }
+.fx-add-category-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.fx-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.fx-add-row button {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-3);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.fx-add-row button:hover { background: var(--cobalt-bg); }
 
 /* ── Folder shelf (recipe folders) ─────────────────────────────────── */
 
