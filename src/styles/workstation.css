@@ -142,7 +142,81 @@
 .pan-layer {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ── Image nodes (user photos) ─────────────────────────────────────── */
+
+.image-node {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  box-sizing: border-box;
+}
+.image-node img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  border-radius: 2px;
+  box-shadow: 0 6px 18px rgba(20, 18, 31, 0.28);
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+}
+.image-node.selected img {
+  outline: 2.5px dashed var(--cobalt);
+  outline-offset: 4px;
+}
+.image-node-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--cobalt);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
+}
+.image-node-resize {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+.image-node-rotate {
+  left: 50%;
+  top: -28px;
+  transform: translateX(-50%);
+  cursor: grab;
+}
+.image-node-rotate::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: var(--cobalt);
+  transform: translateX(-50%);
+}
+.image-node-delete {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
 }
 
 /* Empty-state hint */
@@ -153,7 +227,7 @@
   display: grid;
   place-items: center;
   text-align: center;
-  pointer-events: none;
+  cursor: pointer;
   padding: 0 12%;
 }
 .empty-hint .marker {
@@ -411,6 +485,7 @@
   opacity: 0.9;
   box-shadow: 0 2px 6px rgba(20, 18, 31, 0.14);
   mix-blend-mode: multiply;
+  pointer-events: none;
 }
 .washi.pink  { background: repeating-linear-gradient(45deg, #ffb6d9 0 9px, #ff9ec9 9px 18px); }
 .washi.mint  { background: repeating-linear-gradient(45deg, #b6e9d4 0 9px, #9fdcc2 9px 18px); }
