@@ -98,6 +98,18 @@ export default function ImageNode({ image, selected, scale, onSelect, onUpdate, 
       for (let i = 0, j = 0; i < md.data.length; i += 4, j++) bgAlphaMask[j] = md.data[i + 3];
     }
 
+    // A text node's canvas starts fully transparent outside the glyphs. Some
+    // effects (e.g. Pixelate) paint an opaque full-canvas rect before
+    // compositing, which would otherwise turn the whole rectangular text box
+    // solid. Snapshot the glyph alpha now and clip back to it after the
+    // stack runs, so an effect can only ever show up on the letters.
+    let textAlphaMask: Uint8ClampedArray | null = null;
+    if (isText) {
+      const snap = workCanvas.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, w, h);
+      textAlphaMask = new Uint8ClampedArray(w * h);
+      for (let i = 0, j = 0; i < snap.data.length; i += 4, j++) textAlphaMask[j] = snap.data[i + 3];
+    }
+
     for (const layer of image.effectStack) {
       if (layer.visible === false) continue;
       const result = applyEffectLayer(workCanvas, layer, w, h);
@@ -116,11 +128,12 @@ export default function ImageNode({ image, selected, scale, onSelect, onUpdate, 
       }
     }
 
-    if (bgAlphaMask) {
+    const alphaMask = bgAlphaMask ?? textAlphaMask;
+    if (alphaMask) {
       const wctx = workCanvas.getContext('2d', { willReadFrequently: true })!;
       const d = wctx.getImageData(0, 0, w, h);
       for (let i = 0, j = 0; i < d.data.length; i += 4, j++) {
-        d.data[i + 3] = Math.min(d.data[i + 3], bgAlphaMask[j]);
+        d.data[i + 3] = Math.min(d.data[i + 3], alphaMask[j]);
       }
       wctx.putImageData(d, 0, 0);
     }

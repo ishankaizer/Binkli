@@ -1,4 +1,5 @@
 import { applyEffectLayer, applyGrainOverlay } from './effects';
+import { applyCutoutMask, removeBackground } from './cutout';
 import type { PlacedImage } from './imageNode';
 import { fontsReady, renderTextCanvas } from './textEffects';
 
@@ -53,7 +54,11 @@ export async function exportPlacedImage(
     const targetW = preset?.width ?? Math.round(image.width * scale);
     const targetH = preset?.height ?? Math.round(image.height * scale);
     const drawn = renderTextCanvas({ ...image.text, size: image.text.size * scale }, targetW, targetH);
-    return finishExport(drawn, image, targetW, targetH, fileType, preset);
+    // Same reasoning as the live canvas (ImageNode.tsx): snapshot the glyph
+    // alpha before the effect stack runs, so an effect that paints its own
+    // opaque rect can't turn the exported PNG's text box into a solid block.
+    const glyphAlpha = readAlpha(drawn, targetW, targetH);
+    return finishExport(drawn, image, targetW, targetH, fileType, preset, glyphAlpha);
   }
 
   const imgEl = await loadImage(image.src);
@@ -89,7 +94,26 @@ export async function exportPlacedImage(
     initCtx.drawImage(imgEl, 0, 0, targetW, targetH);
   }
 
-  finishExport(work, image, targetW, targetH, fileType, preset);
+  // Background removal reads the untouched, freshly-fitted pixels, before any
+  // effect gets a chance to repaint them — same order as the live canvas.
+  let bgAlphaMask: Uint8ClampedArray | null = null;
+  if (image.cutout?.removeBackground) {
+    const scratch = document.createElement('canvas');
+    scratch.width = targetW;
+    scratch.height = targetH;
+    scratch.getContext('2d', { willReadFrequently: true })!.drawImage(work, 0, 0);
+    removeBackground(scratch, image.cutout.bgThreshold);
+    bgAlphaMask = readAlpha(scratch, targetW, targetH);
+  }
+
+  finishExport(work, image, targetW, targetH, fileType, preset, bgAlphaMask);
+}
+
+function readAlpha(canvas: HTMLCanvasElement, w: number, h: number): Uint8ClampedArray {
+  const d = canvas.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, w, h);
+  const alpha = new Uint8ClampedArray(w * h);
+  for (let i = 0, j = 0; i < d.data.length; i += 4, j++) alpha[j] = d.data[i + 3];
+  return alpha;
 }
 
 /** Folds the effect stack over an already-drawn base, then downloads it. */
@@ -100,6 +124,7 @@ function finishExport(
   targetH: number,
   fileType: ExportFileType,
   preset: ExportPreset | null,
+  alphaMask: Uint8ClampedArray | null = null,
 ) {
   let work = base;
   for (const layer of image.effectStack) {
@@ -120,8 +145,21 @@ function finishExport(
     }
   }
 
+  if (alphaMask) {
+    const mctx = work.getContext('2d', { willReadFrequently: true })!;
+    const d = mctx.getImageData(0, 0, targetW, targetH);
+    for (let i = 0, j = 0; i < d.data.length; i += 4, j++) {
+      d.data[i + 3] = Math.min(d.data[i + 3], alphaMask[j]);
+    }
+    mctx.putImageData(d, 0, 0);
+  }
+
   const ctx = work.getContext('2d', { willReadFrequently: true })!;
   if (image.grain > 0) applyGrainOverlay(ctx, targetW, targetH, image.grain);
+
+  if (!image.text && image.cutout && image.cutout.type !== 'none') {
+    applyCutoutMask(work, image.cutout);
+  }
 
   let exportCanvas = work;
   if (fileType === 'jpg') {

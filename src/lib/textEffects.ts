@@ -16,7 +16,10 @@ export type TextEffectType =
   | 'chromatic' | 'bubble' | 'chrome' | 'sticker' | 'glitch' | 'halftone'
   | 'varsity' | 'marker' | 'arc' | 'rainbow' | 'echo' | 'ransom';
 
-export type TextFontKey = 'marker' | 'hand' | 'hand2' | 'sans' | 'mono';
+export type TextFontKey =
+  | 'marker' | 'hand' | 'hand2' | 'sans' | 'mono'
+  | 'caveat' | 'shadows' | 'architects' | 'gochi' | 'indie'
+  | 'amatic' | 'bangers' | 'special-elite' | 'rock-salt' | 'bebas' | 'anton' | 'satisfy';
 
 export interface TextConfig {
   text: string;
@@ -32,11 +35,23 @@ export interface TextConfig {
 }
 
 export const TEXT_FONTS: { key: TextFontKey; label: string; family: string; weight: string }[] = [
-  { key: 'marker', label: 'Marker', family: '"Permanent Marker", cursive', weight: '400' },
-  { key: 'hand',   label: 'Kalam',  family: '"Kalam", cursive', weight: '700' },
-  { key: 'hand2',  label: 'Patrick', family: '"Patrick Hand", cursive', weight: '400' },
-  { key: 'sans',   label: 'Jakarta', family: '"Plus Jakarta Sans", system-ui, sans-serif', weight: '800' },
-  { key: 'mono',   label: 'Plex Mono', family: '"IBM Plex Mono", monospace', weight: '600' },
+  { key: 'marker',       label: 'Marker',    family: '"Permanent Marker", cursive', weight: '400' },
+  { key: 'hand',         label: 'Kalam',     family: '"Kalam", cursive', weight: '700' },
+  { key: 'hand2',        label: 'Patrick',   family: '"Patrick Hand", cursive', weight: '400' },
+  { key: 'caveat',       label: 'Caveat',    family: '"Caveat", cursive', weight: '700' },
+  { key: 'shadows',      label: 'Shadows',   family: '"Shadows Into Light", cursive', weight: '400' },
+  { key: 'architects',   label: 'Architect', family: '"Architects Daughter", cursive', weight: '400' },
+  { key: 'gochi',        label: 'Gochi',     family: '"Gochi Hand", cursive', weight: '400' },
+  { key: 'indie',        label: 'Indie',     family: '"Indie Flower", cursive', weight: '400' },
+  { key: 'satisfy',      label: 'Satisfy',   family: '"Satisfy", cursive', weight: '400' },
+  { key: 'amatic',       label: 'Amatic',    family: '"Amatic SC", cursive', weight: '700' },
+  { key: 'bangers',      label: 'Bangers',   family: '"Bangers", cursive', weight: '400' },
+  { key: 'special-elite', label: 'Typewriter', family: '"Special Elite", cursive', weight: '400' },
+  { key: 'rock-salt',    label: 'Rock Salt', family: '"Rock Salt", cursive', weight: '400' },
+  { key: 'bebas',        label: 'Bebas',     family: '"Bebas Neue", sans-serif', weight: '400' },
+  { key: 'anton',        label: 'Anton',     family: '"Anton", sans-serif', weight: '400' },
+  { key: 'sans',         label: 'Jakarta',   family: '"Plus Jakarta Sans", system-ui, sans-serif', weight: '800' },
+  { key: 'mono',         label: 'Plex Mono', family: '"IBM Plex Mono", monospace', weight: '600' },
 ];
 
 export interface TextEffectDef {

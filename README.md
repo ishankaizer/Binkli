@@ -360,6 +360,30 @@ references/                        78 design reference images
      sticker/folder scans already in `public/`, per the "real assets, not
      vectors" rule — reuses assets instead of adding new generation code.
 
+11. **Export bg-removal bug, text-box mask bleed, font expansion — DONE (2026-09-16).**
+   - **Cutout export bug**: `lib/exportImage.ts` never called `removeBackground()`/
+     `applyCutoutMask()` — those only ran in the live `ImageNode.tsx` canvas.
+     A PNG export with "remove background" checked shipped the original,
+     un-cut background (reported as "coming out as a white background").
+     Fixed by mirroring the live pipeline in `exportPlacedImage`/`finishExport`:
+     snapshot the bg-removal alpha off the untouched fitted image, run the
+     effect stack, multiply the alpha back in, then grain, then the cutout
+     shape. Verified end-to-end in-browser: exported PNG alpha is 0 at the
+     background and 255 on the subject.
+   - **Text "mask field" bleed**: some effects (e.g. Pixelate) paint an
+     opaque full-canvas rect before compositing; on a text node — whose
+     canvas starts transparent outside the glyphs — that turned the whole
+     rectangular text box solid instead of only affecting the letters.
+     Fixed by snapshotting the glyph alpha before the effect stack runs and
+     clipping back to it after (`ImageNode.tsx` render(), and the matching
+     path in `exportImage.ts` for text export), the same technique already
+     used for photo bg-removal alpha.
+   - **More fonts**: `TEXT_FONTS` grew from 5 to 17 (added Caveat, Shadows
+     Into Light, Architects Daughter, Gochi Hand, Indie Flower, Satisfy,
+     Amatic SC, Bangers, Special Elite, Rock Salt, Bebas Neue, Anton), all
+     via Google Fonts `<link>` in `index.html`. Plain dropdown, no search —
+     the user said "for now", so no live Google Fonts API integration.
+
 ## Design tokens quick reference
 
 See `src/styles/tokens.css` for the full list. Highlights: warm paper bg
