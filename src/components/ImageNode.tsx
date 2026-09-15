@@ -2,11 +2,15 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { applyEffectLayer, applyGrainOverlay } from '../lib/effects';
 import { fontsReady, renderTextCanvas } from '../lib/textEffects';
+import { applyCutoutMask, removeBackground } from '../lib/cutout';
 import type { PlacedImage } from '../lib/imageNode';
 
 interface ImageNodeProps {
   image: PlacedImage;
   selected: boolean;
+  /** Current pan/zoom scale of the enclosing layer, so a drag's on-screen
+      pixels map back to the correct page-local delta at any zoom level. */
+  scale: number;
   onSelect: (id: string) => void;
   onUpdate: (id: string, patch: Partial<PlacedImage>) => void;
   onDelete: (id: string) => void;
@@ -39,7 +43,7 @@ function capturePointer(el: Element, pointerId: number) {
   }
 }
 
-export default function ImageNode({ image, selected, onSelect, onUpdate, onDelete, onDuplicate, onRestack }: ImageNodeProps) {
+export default function ImageNode({ image, selected, scale, onSelect, onUpdate, onDelete, onDuplicate, onRestack }: ImageNodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -78,6 +82,22 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
     workCanvas.height = h;
     workCanvas.getContext('2d', { willReadFrequently: true })!.drawImage(source, 0, 0, w, h);
 
+    // Background removal reads the untouched source pixels, before any effect
+    // has a chance to repaint them, then its alpha mask is multiplied back in
+    // once the stack has run — that way an effect like duotone still sees the
+    // full photo, not a photo with a hole already cut in it.
+    let bgAlphaMask: Uint8ClampedArray | null = null;
+    if (!isText && image.cutout?.removeBackground) {
+      const scratch = document.createElement('canvas');
+      scratch.width = w;
+      scratch.height = h;
+      scratch.getContext('2d', { willReadFrequently: true })!.drawImage(workCanvas, 0, 0);
+      removeBackground(scratch, image.cutout.bgThreshold);
+      const md = scratch.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, w, h);
+      bgAlphaMask = new Uint8ClampedArray(w * h);
+      for (let i = 0, j = 0; i < md.data.length; i += 4, j++) bgAlphaMask[j] = md.data[i + 3];
+    }
+
     for (const layer of image.effectStack) {
       if (layer.visible === false) continue;
       const result = applyEffectLayer(workCanvas, layer, w, h);
@@ -96,12 +116,25 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
       }
     }
 
+    if (bgAlphaMask) {
+      const wctx = workCanvas.getContext('2d', { willReadFrequently: true })!;
+      const d = wctx.getImageData(0, 0, w, h);
+      for (let i = 0, j = 0; i < d.data.length; i += 4, j++) {
+        d.data[i + 3] = Math.min(d.data[i + 3], bgAlphaMask[j]);
+      }
+      wctx.putImageData(d, 0, 0);
+    }
+
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(workCanvas, 0, 0);
 
     if (image.grain > 0) applyGrainOverlay(ctx, w, h, image.grain);
-  }, [isText, image.text, image.effectStack, image.grain, image.width, image.height]);
+
+    if (!isText && image.cutout && image.cutout.type !== 'none') {
+      applyCutoutMask(canvas, image.cutout);
+    }
+  }, [isText, image.text, image.effectStack, image.grain, image.cutout, image.width, image.height]);
 
   useEffect(() => {
     if (isText) {
@@ -154,8 +187,11 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
   const onDragMove = (e: ReactPointerEvent) => {
     const d = dragRef.current;
     if (!d) return;
-    const dx = e.clientX - d.startX;
-    const dy = e.clientY - d.startY;
+    // Screen-space pointer movement maps to a bigger page-local delta when
+    // zoomed out, and a smaller one zoomed in — the node has to move (or
+    // grow) by the same amount on the page either way.
+    const dx = (e.clientX - d.startX) / scale;
+    const dy = (e.clientY - d.startY) / scale;
 
     if (d.mode === 'move') {
       onUpdate(image.id, { x: d.orig.x + dx, y: d.orig.y + dy });

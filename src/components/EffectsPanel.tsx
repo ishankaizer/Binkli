@@ -5,6 +5,7 @@ import { useEffectThumbs } from '../lib/effectThumbs';
 import { GRADIENT_MAP_PRESETS, type EffectLayer, type EffectParams, type EffectType } from '../lib/effects';
 import type { PlacedImage } from '../lib/imageNode';
 import { TEXTURES } from '../lib/textures';
+import { DEFAULT_CUTOUT, type CutoutOptions, type CutoutType } from '../lib/cutout';
 import {
   TEXT_EFFECTS,
   TEXT_EFFECT_GROUPS,
@@ -288,6 +289,10 @@ export default function EffectsPanel({ image, onUpdate }: EffectsPanelProps) {
 
   const patchText = (patch: Partial<TextConfig>) =>
     img.text && onUpdate(img.id, { text: { ...img.text, ...patch } });
+
+  const cutout: CutoutOptions = img.cutout ?? DEFAULT_CUTOUT;
+  const patchCutout = (patch: Partial<CutoutOptions>) =>
+    onUpdate(img.id, { cutout: { ...cutout, ...patch } });
 
   // Live drag-to-reorder: as the pointer crosses another layer's midpoint,
   // the stack reorders immediately (not just on drop).
@@ -614,6 +619,61 @@ export default function EffectsPanel({ image, onUpdate }: EffectsPanelProps) {
               />
               <output className="fx-param-value">{img.grain}</output>
             </label>
+
+            {!isText && (
+              <>
+                <div className="panel-section-head">
+                  <span>cutout</span>
+                </div>
+                <div className="cut-shape-row">
+                  {(['none', 'torn', 'rough', 'clean', 'circle'] as CutoutType[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      className={`cut-shape${cutout.type === t ? ' is-active' : ''}`}
+                      onClick={() => patchCutout({ type: t })}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                {cutout.type !== 'none' && (
+                  <label className="fx-param fx-param-solo">
+                    <span className="fx-param-label">paper</span>
+                    <input
+                      className="fx-color"
+                      type="color"
+                      value={cutout.paperColor}
+                      onChange={(e) => patchCutout({ paperColor: e.target.value })}
+                    />
+                    <span className="fx-param-hint">shows through a torn/rough edge</span>
+                  </label>
+                )}
+
+                <label className="cut-bg-toggle">
+                  <input
+                    type="checkbox"
+                    checked={cutout.removeBackground}
+                    onChange={(e) => patchCutout({ removeBackground: e.target.checked })}
+                  />
+                  remove background
+                </label>
+                {cutout.removeBackground && (
+                  <label className="fx-param fx-param-solo">
+                    <span className="fx-param-label">threshold</span>
+                    <input
+                      className="fx-range"
+                      type="range"
+                      min={5}
+                      max={80}
+                      value={cutout.bgThreshold}
+                      onChange={(e) => patchCutout({ bgThreshold: Number(e.target.value) })}
+                    />
+                    <output className="fx-param-value">{cutout.bgThreshold}</output>
+                  </label>
+                )}
+              </>
+            )}
           </>
         )}
       </div>

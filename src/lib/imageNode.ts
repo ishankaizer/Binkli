@@ -1,5 +1,6 @@
 import type { EffectLayer } from './effects';
 import { defaultTextConfig, type TextConfig } from './textEffects';
+import { DEFAULT_CUTOUT, type CutoutOptions } from './cutout';
 
 /**
  * A node placed on the notebook page. x/y/width/height are in page-local px
@@ -26,6 +27,8 @@ export interface PlacedImage {
   rotation: number;
   effectStack: EffectLayer[];
   grain: number; // 0-100, applied last, always on top of the stack
+  /** Photo nodes only — background removal + a die-cut/torn/circle edge shape. */
+  cutout?: CutoutOptions;
 }
 
 export const isTextNode = (node: PlacedImage): boolean => node.text !== undefined;
@@ -43,6 +46,7 @@ export function createPlacedImage(file: File, centerX: number, centerY: number):
     rotation: Math.random() * 10 - 5,
     effectStack: [],
     grain: 0,
+    cutout: { ...DEFAULT_CUTOUT },
   };
 }
 
@@ -77,6 +81,7 @@ export function duplicatePlacedImage(image: PlacedImage, offset = 24): PlacedIma
     x: image.x + offset,
     y: image.y + offset,
     text: image.text ? { ...image.text } : undefined,
+    cutout: image.cutout ? { ...image.cutout } : undefined,
     effectStack: image.effectStack.map((layer) => ({ ...layer, id: crypto.randomUUID() })),
   };
 }

@@ -130,6 +130,10 @@ src/
                                    Text draws to a canvas, so the image effect stack composites on top of it
     exportImage.ts                EXPORT_PRESETS + exportPlacedImage() — re-renders the effect stack fresh at
                                    export resolution (cover-fit into a preset, or native size) and downloads it
+    cutout.ts                     CutoutOptions, applyCutoutMask() (5 edge shapes), removeBackground()
+                                   (perimeter k-means + feathered alpha, no bundled model) — see Status #10
+    gradients.ts                  GRADIENT_PRESETS (12), renderGradient() — 6 generator types, used by GradientLab
+    demos.ts                      generateDemos() — seeds the page with 5 real assets + tuned effect stacks
   components/
     SplashScreen.tsx           landing screen — matches splash2.png
     TopBar.tsx                 paper picker (scene backdrop folded in, see Status #7), recipes/clear-all/export (all wired)
@@ -142,6 +146,8 @@ src/
                                 grain + per-effect live thumbnails (see Status #7, #8)
     FolderShelf.tsx            bottom drawer of recipe cards, wired to the effects engine (see Status #7)
     ExportModal.tsx            format (6 presets + original) and PNG/JPG picker, calls lib/exportImage.ts
+    FrameNode.tsx              a draggable layout guide (label tab, dims, dot grid) — 6 device/format presets
+    GradientLab.tsx            preset picker for lib/gradients.ts, drops a generated background onto the page
 scripts/
   cut_assets.py                 sticker/folder background removal (flood-fill)
   make_torn_paper.py            generates the torn-paper texture PNGs
@@ -314,10 +320,45 @@ references/                        78 design reference images
      the other; `setPointerCapture` could throw and abort drag setup.
    - **Bring to front / send to back** restored (`]` / `[`, or the buttons on
      a selected node).
-10. **Still missing from the old app** (known, not yet ported — flag if
-   wanted): canvas pan/zoom with a scale badge, frame preset overlays
-   (`FrameNode`), background removal + cutout masks (`lib/cutout.ts`, 289
-   lines), the Gradient Lab, and the seeded demo nodes on first load.
+10. **The five remaining gaps from #10 — DONE.** Pan/zoom, frames, cutout,
+   Gradient Lab, demo seeding are all in now, closing the old app's
+   feature gap entirely (everything genuinely lost in the rebuild is
+   ported; what's left unported was cut on purpose — see the top of this
+   file's "Why this is a rebuild").
+   - **Pan/zoom** (`NotebookCanvas.tsx`): scroll to zoom (25%-300%), drag
+     empty paper to pan, a scale badge (bottom-center, click to reset) —
+     matches the pre-rebuild app, plus one fix: React's synthetic `onWheel`
+     is passive by default, so `preventDefault()` inside it silently failed
+     and errored in dev. Wheel zoom now binds a real, non-passive listener.
+     `ImageNode`/`FrameNode` both take a `scale` prop and divide pointer
+     deltas by it, so drag/resize track correctly at any zoom level.
+   - **Frames** (`FrameNode.tsx`): 6 presets (iPhone 14, Android, Square
+     Post, 16:9 Slide, Laptop, Desktop) as draggable layout guides — a
+     label tab, a dimension readout, a dot grid. Guides only, no effect
+     stack, no resize/rotate; `+ frame` opens a preset picker.
+   - **Cutout + background removal** (`lib/cutout.ts`, ported near-verbatim):
+     5 edge shapes (none/torn/rough/clean/circle) and a from-scratch
+     background remover (perimeter k-means clustering + feathered alpha,
+     no bundled model). Lives in the Stack tab, photo nodes only. Order
+     matters and is preserved from the original: bg-removal alpha is
+     computed off the untouched source, the effect stack runs on full
+     colour, the alpha mask multiplies back in, then grain, then the
+     cutout shape — so an effect never sees a photo with a hole already in
+     it. Wired into both the live `ImageNode` render and `exportImage.ts`.
+   - **Gradient Lab** (`lib/gradients.ts` ported near-verbatim,
+     `GradientLab.tsx` new): 12 presets (linear/radial/aurora/blob/mesh/
+     sweep types) render to a canvas and drop onto the page as an ordinary
+     photo node — same effect stack, grain, cutout and export as anything
+     else. Built as a compact preset grid in this app's own modal
+     chrome (reuses `.export-panel`) rather than porting the original's
+     424-line live-tuning UI (grain/blur/noise sliders); picking a
+     generated background and then styling it with the effect stack was
+     judged the more valuable 80% for the size of the port.
+   - **Demo seeding** (`lib/demos.ts`, new): the page now opens with 5
+     placed photos instead of empty. Unlike the original's demos.ts
+     (~150 lines of procedural canvas art), these are the real
+     sticker/folder scans already in `public/`, per the "real assets, not
+     vectors" rule — reuses assets instead of adding new generation code.
 
 ## Design tokens quick reference
 

@@ -162,6 +162,45 @@
 }
 .canvas-add-group .sticker-btn { cursor: pointer; }
 
+.frame-picker-wrap { position: relative; }
+.frame-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: var(--sticker-shadow-lg);
+}
+.frame-picker button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.frame-picker button:hover { background: var(--surface-3); }
+.frame-picker-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.frame-picker-size {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+}
+
 /* ── Image nodes (user photos) ─────────────────────────────────────── */
 
 .image-node {
@@ -247,6 +286,51 @@
   box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
 }
 .image-node-stack button:hover { background: var(--butter); }
+
+/* ── Frame guides — layout targets, not photos ───────────────────────── */
+
+.frame-node {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  box-sizing: border-box;
+  border: 1.5px dashed;
+  border-radius: 3px;
+  cursor: move;
+  overflow: hidden;
+}
+.frame-node.selected { border-style: solid; border-width: 2px; }
+.frame-dots { position: absolute; inset: 0; pointer-events: none; }
+.frame-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  opacity: 0.18;
+}
+.frame-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 3px 8px;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+}
+.frame-label span { opacity: 0.72; font-weight: 500; margin-left: 3px; }
+.frame-dims {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
 
 .image-node-duplicate {
   position: absolute;
@@ -831,6 +915,48 @@
   padding: 2px 5px;
 }
 .fx-param-value { width: 28px; text-align: right; flex: none; font-family: var(--font-mono); }
+.fx-param-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Cutout: shape + background removal, photo nodes only ────────────── */
+
+.cut-shape-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cut-shape {
+  padding: 5px 11px;
+  border: 1.5px solid var(--border-3);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+.cut-shape:hover { border-color: var(--ink); }
+.cut-shape.is-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.cut-bg-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cut-bg-toggle input { accent-color: var(--cobalt); cursor: pointer; }
 
 /* ── Add-effect catalog: a grid of per-effect tiles, grouped by category ── */
 
@@ -1314,3 +1440,56 @@
   padding: 12px 16px;
 }
 .export-download:disabled { opacity: 0.6; cursor: wait; }
+
+/* ── Gradient Lab — reuses the export-panel shell ────────────────────── */
+
+.grad-panel { width: min(640px, 92vw); }
+.grad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 10px;
+  padding-bottom: 4px;
+}
+.grad-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 2px solid var(--border-2);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.grad-card:hover { border-color: var(--ink); transform: translateY(-2px); }
+.grad-swatch { width: 100%; height: 72px; border-radius: 7px; display: block; }
+.grad-card-name {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: center;
+}
+
+/* ── Pan/zoom scale badge ─────────────────────────────────────────────── */
+
+.zoom-badge {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--sticker-shadow);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.zoom-badge:hover { background: var(--butter-bg); }
+.zoom-badge .zoom-hint { color: var(--text-3); font-size: 9px; }

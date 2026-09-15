@@ -5,21 +5,28 @@ import NotebookCanvas from './components/NotebookCanvas';
 import EffectsPanel from './components/EffectsPanel';
 import FolderShelf from './components/FolderShelf';
 import ExportModal from './components/ExportModal';
+import GradientLab from './components/GradientLab';
 import SplashScreen from './components/SplashScreen';
+import { FRAME_PRESETS, type FrameNodeData } from './components/FrameNode';
 import { NOTEBOOKS, type NotebookKey } from './lib/textures';
 import { createPlacedImage, createTextNode, duplicatePlacedImage, type PlacedImage } from './lib/imageNode';
 import { applyRecipe, type Recipe } from './lib/recipes';
 import { exportPlacedImage, type ExportFileType, type ExportPreset } from './lib/exportImage';
+import { renderGradient, type GradientPreset } from './lib/gradients';
+import { generateDemos } from './lib/demos';
 import './styles/workstation.css';
 
 export default function App() {
   const [notebook, setNotebook] = useState<NotebookKey>('grid');
   const [showSplash, setShowSplash] = useState(true);
   const [showFolders, setShowFolders] = useState(false);
-  const [images, setImages] = useState<PlacedImage[]>([]);
+  const [images, setImages] = useState<PlacedImage[]>(() => generateDemos());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [frames, setFrames] = useState<FrameNodeData[]>([]);
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+  const [showGradientLab, setShowGradientLab] = useState(false);
   // Copy/paste clipboard, holds a full PlacedImage snapshot, not just an id,
   // so it survives the original being deleted before pasting.
   const clipboardRef = useRef<PlacedImage | null>(null);
@@ -75,6 +82,64 @@ export default function App() {
     setSelectedId(node.id);
   }, []);
 
+  const addGradient = useCallback((preset: GradientPreset) => {
+    const canvas = renderGradient(preset.config, 480, 480);
+    const centerX = 300, centerY = 220;
+    const placed: PlacedImage = {
+      id: crypto.randomUUID(),
+      src: canvas.toDataURL('image/png'),
+      x: centerX - 110,
+      y: centerY - 110,
+      width: 220,
+      height: 220,
+      rotation: Math.random() * 6 - 3,
+      effectStack: [],
+      grain: 0,
+      cutout: { type: 'none', paperColor: '#F2EDE4', removeBackground: false, bgThreshold: 30 },
+    };
+    setImages((prev) => [...prev, placed]);
+    setSelectedId(placed.id);
+    setShowGradientLab(false);
+  }, []);
+
+  const selectImage = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id) setSelectedFrameId(null);
+  }, []);
+
+  const selectFrame = useCallback((id: string | null) => {
+    setSelectedFrameId(id);
+    if (id) setSelectedId(null);
+  }, []);
+
+  const addFrame = useCallback((presetIndex: number, centerX: number, centerY: number) => {
+    const preset = FRAME_PRESETS[presetIndex];
+    if (!preset) return;
+    const frame: FrameNodeData = {
+      id: crypto.randomUUID(),
+      label: preset.label,
+      presetW: preset.presetW,
+      presetH: preset.presetH,
+      width: preset.displayW,
+      height: preset.displayH,
+      x: centerX - preset.displayW / 2,
+      y: centerY - preset.displayH / 2,
+      color: preset.color,
+    };
+    setFrames((prev) => [...prev, frame]);
+    setSelectedFrameId(frame.id);
+    setSelectedId(null);
+  }, []);
+
+  const updateFrame = useCallback((id: string, patch: Partial<FrameNodeData>) => {
+    setFrames((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  }, []);
+
+  const deleteFrame = useCallback((id: string) => {
+    setFrames((prev) => prev.filter((f) => f.id !== id));
+    setSelectedFrameId((cur) => (cur === id ? null : cur));
+  }, []);
+
   const duplicateImage = useCallback(
     (id: string) => {
       const source = images.find((img) => img.id === id);
@@ -125,6 +190,12 @@ export default function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'Escape') {
         setSelectedId(null);
+        setSelectedFrameId(null);
+        return;
+      }
+      if (selectedFrameId && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        deleteFrame(selectedFrameId);
         return;
       }
       if (!selectedId) return;
@@ -148,7 +219,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedId, deleteImage, copyImage, duplicateImage, restack]);
+  }, [selectedId, selectedFrameId, deleteImage, copyImage, duplicateImage, restack, deleteFrame]);
 
   // A single native paste handler covers both sources: a real image on the OS
   // clipboard (a screenshot, an image copied from another app) is imported as
@@ -193,13 +264,20 @@ export default function App() {
         hasContent={images.length > 0}
         images={images}
         selectedId={selectedId}
-        onSelect={setSelectedId}
+        onSelect={selectImage}
         onUpdate={updateImage}
         onDelete={deleteImage}
         onDuplicate={duplicateImage}
         onRestack={restack}
         onAddFiles={addFiles}
         onAddText={addText}
+        onOpenGradientLab={() => setShowGradientLab(true)}
+        frames={frames}
+        selectedFrameId={selectedFrameId}
+        onSelectFrame={selectFrame}
+        onUpdateFrame={updateFrame}
+        onDeleteFrame={deleteFrame}
+        onAddFrame={addFrame}
       />
 
       <EffectsPanel image={selectedImage} onUpdate={updateImage} />
@@ -218,6 +296,12 @@ export default function App() {
         }}
         onExport={runExport}
         busy={exporting}
+      />
+
+      <GradientLab
+        open={showGradientLab}
+        onClose={() => setShowGradientLab(false)}
+        onPick={addGradient}
       />
 
       <AnimatePresence>
