@@ -320,7 +320,7 @@ references/                        78 design reference images
      the other; `setPointerCapture` could throw and abort drag setup.
    - **Bring to front / send to back** restored (`]` / `[`, or the buttons on
      a selected node).
-10. **The five remaining gaps from #10 — DONE.** Pan/zoom, frames, cutout,
+10. **The five remaining gaps from #9 — DONE.** Pan/zoom, frames, cutout,
    Gradient Lab, demo seeding are all in now, closing the old app's
    feature gap entirely (everything genuinely lost in the rebuild is
    ported; what's left unported was cut on purpose — see the top of this
