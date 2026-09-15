@@ -1,8 +1,8 @@
 # Binkli — project handoff
 
-> Read this file first in any new session before touching code. It's the single
-> source of truth for what Binkli is, what's built, and what's next. Keep it
-> updated as work lands — this doc is the thing that keeps sessions in sync.
+> Read this file first in any new session before touching code. Deep detail
+> lives in [`docs/`](./docs) — this file is the short version plus what you
+> need before you can safely make a change. Keep it updated as work lands.
 
 ## THIS is the active project
 
@@ -10,8 +10,8 @@
 Vite + React rebuild described below. Work here.
 
 `X:\CLAUDE\binkli-reference` is the **old, superseded** Next.js app kept only
-as a read-only reference for what NOT to do (see "Why this is a rebuild").
-Do not build features there.
+as a read-only reference for what NOT to do (see "Why this is a rebuild"
+below). Do not build features there.
 
 **Deploy status (as of 2026-09-11): LIVE.** `https://binkli.vercel.app/`
 serves this rebuild. It's connected to `github.com/ishankaizer/Binkli`;
@@ -23,7 +23,8 @@ is set to Vite, output directory left at the Vite default (`dist`). The
 `rebuild` branch also exists with the same content (redundant, harmless).
 To ship a change: commit, then `git push origin rebuild && git push origin
 rebuild:claude/image-effects-editor-app-Ixmsa` — a git push permission rule
-is set in `.claude/settings.local.json` so this runs without a prompt.
+is set in `.claude/settings.local.json` so this runs without a prompt
+(still push deliberately, not reflexively).
 
 ## What this is
 
@@ -40,14 +41,15 @@ The original version (Next.js, `github.com/ishankaizer/Binkli`, branch
 flat 2D SVG bezier paths instead of using the real texture images the user
 supplied. **The whole point of the rebuild is to respect real image assets
 (PNG/JPG textures used as-is) and never redraw them as vector shapes.** This
-rule governs every asset decision in this codebase — see "Real assets, not
-vectors" below.
+rule governs every asset decision in this codebase — see
+[`docs/architecture.md`](./docs/architecture.md#real-assets-not-vectors).
 
 ## Stack
 
 - Vite + React 19 + TypeScript (not Next.js — deliberate change from the original)
 - Framer Motion for animation
-- Canvas 2D for image effects — raster, order-dependent layer stack (see Status #5)
+- Canvas 2D for image effects — raster, order-dependent layer stack, see
+  [`docs/effects-engine.md`](./docs/effects-engine.md)
 - Plain CSS with design tokens (`src/styles/tokens.css`), no CSS framework
 - Fonts via Google Fonts `<link>` in `index.html` (no Next.js font loader)
 
@@ -61,336 +63,29 @@ npm run dev
 Dev server on `http://localhost:5173`. Also registered as launch config
 `binkli-dev` in `X:\CLAUDE\.claude\launch.json`.
 
+`npm run build` (`tsc -b && vite build`) and `npm run lint` (oxlint) before
+shipping anything non-trivial.
+
 **Browser verification gotcha:** the Claude Browser `computer{screenshot}`
 tool times out in this environment. Use Playwright MCP
-(`browser_navigate` → `browser_take_screenshot` to a file → `Read` the PNG)
-for visual checks instead. Playwright's allowed filesystem root for
-screenshots is `X:\CLAUDE` (or `X:\CLAUDE\.playwright-mcp`) — pass a relative
-filename and it lands in `X:\CLAUDE\`.
+(`browser_navigate` → `browser_take_screenshot` to a file → `Read` the PNG,
+or `browser_evaluate` to drive the effects engine directly for a fast,
+visual-free correctness check) instead. Playwright's allowed filesystem
+root for screenshots is `X:\CLAUDE` (or `X:\CLAUDE\.playwright-mcp`) — pass
+a relative filename and it lands in `X:\CLAUDE\`.
 
-## Reference material
+## Where to look for what
 
-- `X:\CLAUDE\references\` — 78 design refs the aesthetic is drawn from
-  (also copied into `binkli/references/`)
-- `X:\CLAUDE\splash.png` — reference mock of the **main workstation** view
-  (topbar with paper/scene pickers, canvas with empty-state hint, effects
-  panel, recipe-folders drawer open, dark scene)
-- `X:\CLAUDE\splash2.png` — reference mock of the **landing splash screen**
-  (floating stickers, "MAKE IT WEIRD." headline, drop-an-image CTA)
-- Both of the above are implemented and confirmed pixel-matching against the
-  live app as of 2026-09-10 (`SplashScreen.tsx` for splash2, `App.tsx` +
-  `TopBar`/`NotebookCanvas`/`EffectsPanel`/`FolderShelf` for splash).
+| Task looks like... | Read |
+|---|---|
+| A specific effect renders wrong, or a new effect needs adding | [`docs/effects-engine.md`](./docs/effects-engine.md) |
+| Something works live but breaks on export (or vice versa) | [`docs/effects-engine.md`](./docs/effects-engine.md#export-vs-live-preview) |
+| Where a file lives, or what a `lib/`/`components/` module owns | [`docs/architecture.md`](./docs/architecture.md) |
+| "Didn't we already build/try this?" | [`docs/changelog.md`](./docs/changelog.md) |
+| "Is X actually missing, or cut on purpose?" | [`docs/known-gaps.md`](./docs/known-gaps.md) |
 
-## Real assets, not vectors
-
-This is the core constraint of the whole rebuild. Every texture, sticker, and
-folder graphic is a real photographed/scanned image, never a CSS or SVG
-recreation:
-
-- **Textures** (`public/textures/`, manifest `src/lib/textures.ts`): grid
-  paper, cream paper, photocopy grain, meadow photo backdrop, torn-paper
-  strips. `paper-edge.png` / `paper-divider.png` / `paper-cream.jpg` are
-  **generated**, not vector-drawn, by `scripts/make_torn_paper.py`
-  (Pillow + numpy — real scanned grain from `paper-photocopy.jpg`,
-  high-passed to kill streaks; clean page uses synthetic isotropic grain).
-  Re-run: `python scripts/make_torn_paper.py`.
-- **Stickers** (`public/stickers/`, 19 files, manifest `src/lib/stickers.ts`):
-  background-removed scans, cut via `scripts/cut_assets.py` (flood-fill from
-  the image borders, preserves interior whites — this beat `rembg` for these
-  specific assets, even though `rembg` is installed). Re-run:
-  `python scripts/cut_assets.py`.
-- **Folders** (`public/folders/`, 11 files, manifest `src/lib/folders.ts`):
-  same cutout pipeline, used as recipe-preset cards in `FolderShelf`.
-
-If a future task looks like "draw a torn paper edge" or "make a sticker
-shape" — stop. It should be a real image asset run through the scripts
-above, not hand-authored SVG/CSS.
-
-## File map
-
-```
-src/
-  App.tsx                    top-level state: notebook, scene, splash/folders visibility
-  main.tsx                   entry
-  index.css                  global reset
-  styles/
-    tokens.css                design tokens (color, shadow, font vars) — ported verbatim from old globals.css
-    workstation.css           all component styles
-  lib/
-    textures.ts                NOTEBOOKS (paper types) + SCENES (backdrops) + TEXTURES registry
-    stickers.ts                STICKERS registry + pickStickers() helper
-    folders.ts                 FOLDERS registry (recipe-card content)
-    imageNode.ts                PlacedImage type (x/y/width/height/rotation/effectStack/grain), createPlacedImage()
-    effects.ts                  the raster effects engine — ~30 canvas-based effect renderers + applyEffectLayer()
-    effectCatalog.ts             EFFECT_CATALOG (7 categories x effect defs) for the "add effect" picker
-    effectThumbs.ts              useEffectThumbs() hook — renders every catalog effect onto a 64px crop of the
-                                  selected photo, cached per source image, so the panel shows real previews
-    recipes.ts                   RECIPES — 18 preset effect stacks ported from binkli-reference, + applyRecipe()
-    textEffects.ts                editable text as a node — TextConfig, 22 text effects, renderTextCanvas().
-                                   Text draws to a canvas, so the image effect stack composites on top of it
-    exportImage.ts                EXPORT_PRESETS + exportPlacedImage() — re-renders the effect stack fresh at
-                                   export resolution (cover-fit into a preset, or native size) and downloads it
-    cutout.ts                     CutoutOptions, applyCutoutMask() (5 edge shapes), removeBackground()
-                                   (perimeter k-means + feathered alpha, no bundled model) — see Status #10
-    gradients.ts                  GRADIENT_PRESETS (12), renderGradient() — 6 generator types, used by GradientLab
-    demos.ts                      generateDemos() — seeds the page with 5 real assets + tuned effect stacks
-  components/
-    SplashScreen.tsx           landing screen — matches splash2.png
-    TopBar.tsx                 paper picker (scene backdrop folded in, see Status #7), recipes/clear-all/export (all wired)
-    NotebookCanvas.tsx         the page surface; owns drag-drop/file-picker import + position clamping; also
-                                renders the "+ add image" button as a sibling, not a child (see Status #8)
-    ImageNode.tsx              a placed photo: <canvas> raster compositing + move/resize/rotate/duplicate/delete/select
-    CanvasDecor.tsx            ambient washi tape + placed stickers on the canvas
-    FloatingStickers.tsx       the drifting sticker layer — cursor repulsion, collisions, edge bounce
-    EffectsPanel.tsx           right rail; ordered effect-stack editor (drag handle + move/remove/opacity/params) +
-                                grain + per-effect live thumbnails (see Status #7, #8)
-    FolderShelf.tsx            bottom drawer of recipe cards, wired to the effects engine (see Status #7)
-    ExportModal.tsx            format (6 presets + original) and PNG/JPG picker, calls lib/exportImage.ts
-    FrameNode.tsx              a draggable layout guide (label tab, dims, dot grid) — 6 device/format presets
-    GradientLab.tsx            preset picker for lib/gradients.ts, drops a generated background onto the page
-scripts/
-  cut_assets.py                 sticker/folder background removal (flood-fill)
-  make_torn_paper.py            generates the torn-paper texture PNGs
-public/
-  textures/, stickers/, folders/    all real image assets, see above
-references/                        78 design reference images
-```
-
-## Status / roadmap
-
-1. Scaffold — **DONE**
-2. Shell + canvas (topbar, notebook page, effects rail frame) — **DONE**
-3. Real assets integrated (textures, stickers, folders wired into shell) — **DONE**
-4. Image nodes — **DONE (2026-09-11).** Drag-and-drop or click-to-browse
-   import, move/resize(aspect-locked)/rotate via handles, delete via button
-   or Delete/Backspace, topbar "clear all" wired up. `ImageNode.tsx` +
-   `lib/imageNode.ts`. Position is clamped so a drag can never push a photo
-   fully outside the notebook's clipped bounds (was a real bug, now fixed).
-5. Effects engine — **rebuilt as a raster, order-dependent stack (2026-09-11).**
-   Superseded the earlier CSS-filter version (tone + fixed-order layers) at
-   the user's explicit request: "photoshop style editing, raster based and
-   proper layer based effects... if I place a gaussian blur and then another
-   effect on top, it should be different than if the effect was applied
-   before." Ported wholesale from the pre-rebuild Next.js app
-   (`binkli-reference/app/lib/effects.ts`), which was already a
-   framework-agnostic canvas engine — copied close to verbatim into
-   `lib/effects.ts`.
-   - **Data model** (`lib/imageNode.ts`): `PlacedImage.effectStack:
-     EffectLayer[]` — an ordered array, each `{ id, type, opacity, params }`.
-     `PlacedImage.grain: number` is a separate always-last overlay (matches
-     the old app's model).
-   - **Rendering** (`ImageNode.tsx`): the node is a `<canvas>`, not an `<img>`.
-     `render()` folds the stack in array order — each layer's
-     `applyEffectLayer()` output becomes the next layer's input (with opacity
-     alpha-blended against the pre-layer state when < 100%) — then
-     `applyGrainOverlay()` on top. This is why order matters: reordering two
-     layers in the stack changes which canvas each one reads from. Verified
-     directly: applying Blur-then-Duotone vs Duotone-then-Blur to the same
-     photo produces byte-different canvas output (`canvas.toDataURL()`
-     diffed programmatically in-session, not just eyeballed).
-   - **Catalog** (`lib/effectCatalog.ts`): ~30 effect types across 7
-     categories (Foundation: exposure/contrast/brightness/saturation/
-     hue-shift/posterize; Color: gradient-map/duotone/overprint/
-     cross-process/bleach-bypass/two-tone; Simplify: blur/field-blur/pixelate;
-     Print: dot-grid/concentric/scanline halftones, risograph, bitmap,
-     dither, ASCII, stamp, word-fill; Distort: chromatic/VHS-tape/glass-warp/
-     motion-blur/radial-zoom; Light: neon/vignette; Final: sharpen/polaroid-
-     frame/VHS-frame/texture-overlay) — this is the full catalog the user
-     had built in the old app, not a trimmed-down subset.
-   - **UI** (`EffectsPanel.tsx`): "add effect" buttons grouped by category;
-     an ordered stack list with move-up/down, per-layer opacity slider, a
-     generic param editor (`PARAM_CONFIG` maps each param key to a
-     number/color/select/text control) driven by whatever keys are present
-     on that layer's `params` object, and a remove button; a grain slider.
-     Deliberately plain — the user said visual design will be decided later,
-     so effort went into engine correctness and catalog completeness, not
-     polish.
-   - Perf: temp canvases created with `{ willReadFrequently: true }` — many
-     effects (risograph, halftone, ASCII, bitmap) do per-cell `getImageData`
-     reads in a loop, which Chrome flags without that hint.
-   - **Not ported from the old app**: cutout/background-removal
-     (`lib/cutout.ts`, 289 lines — a separate subsystem, deliberately
-     deferred rather than rushed), gradient-lab. Recipe wiring is now done,
-     see #7. Flag if cutout/gradient-lab matter for a future pass.
-6. Export (v1) — superseded by #8: originally just downloaded the selected
-   photo's small on-page `<canvas>` as a PNG, no format options.
-7. Recipe wiring + live effect thumbnails + paper/scene merge —
-   **DONE.** Picked back up after a session that ran out of credits mid-way
-   with this work uncommitted (functionally complete, just never landed):
-   - `lib/recipes.ts`: 18 preset effect stacks ported from
-     `binkli-reference/app/lib/recipes.ts` (`RECIPES`, `applyRecipe()`).
-     `FolderShelf` cards call `onApply(recipe)` → `App.tsx: handleRecipe`,
-     which replaces the selected photo's `effectStack` + `grain` wholesale.
-     Disabled with an inline hint ("select a photo on the page first") when
-     nothing is selected.
-   - `lib/effectThumbs.ts`: `useEffectThumbs(src)` renders every catalog
-     effect onto a 64px crop of the *current* photo (cached per source), so
-     both the "add effect" tile grid and each stacked layer's row show a
-     real preview instead of a generic icon.
-   - `EffectsPanel.tsx` rewritten: the stack list is now collapsible rows
-     (thumbnail + name + opacity/setting count, click to expand params),
-     each carrying its category colour via a `--fx` custom property (a
-     4-deep stack reads as 4 distinguishable things); the "add effect" list
-     became a 3-column tile grid grouped by category, each tile showing its
-     live thumbnail and an applied-count badge.
-   - `TopBar`/`lib/textures.ts`: the separate "scene" (backdrop) picker was
-     folded into the paper picker — each `NotebookPaper` now carries its own
-     `backdrop`, so `grid`/`ruled`/`plain`/`meadow`/`dark` is one control
-     instead of two. Also added: Escape to deselect, `clear all`/`export`
-     disabled states, recipes button active-state.
-   - **What was actually missing when this was picked back up**: not the
-     feature logic (it worked, verified end-to-end), but `workstation.css`
-     had no rules at all for ~30 of the new class names the rewritten
-     `EffectsPanel.tsx` introduced (`fx-layer-*`, `fx-param`, `fx-cat-*`,
-     `fx-tile-*`, `panel-head`, `panel-empty*`, `panel-section-head`,
-     `panel-count`, `panel-clear`). Everything rendered as unstyled block
-     flow, passable by accident for plain text, badly overlapping for the
-     flex rows (opacity/level sliders, the layer header). Added the missing
-     CSS; removed the now-dead `.fx-param-row`/`.fx-layer-index`/
-     `.fx-layer-remove`/`.fx-add-row` rules the rewrite had orphaned.
-8. Recipe disabled-state fix, bigger canvas, add-image button, copy/paste/
-   duplicate, drag-to-reorder effects, real export modal — **DONE.**
-   - **Recipes "not working" bug**: `.folder-card:disabled` had no CSS at
-     all, a card with no photo selected looked identical to an enabled one
-     and silently did nothing when clicked, no error, no visual cue. This
-     was the actual root cause (the wiring itself was already correct).
-     Added a disabled state (greyed out, `cursor: not-allowed`) and styled
-     `.folder-card-tag`, also missing.
-   - **Canvas resized**: `.canvas-area`/`.notebook` no longer centre a
-     fixed `min(62vw, 780px)` card with a decorative rotation. It now fills
-     a uniform 28px margin on top/left/bottom, stopping at `right: 260px`
-     so it tucks in just under the effects panel's torn edge.
-   - **`+ add image`** (`NotebookCanvas.tsx`): a persistent button, top
-     right of the canvas, opens the same file picker as the empty-state
-     click. Had to be rendered as a sibling of `.canvas-area` (not a child),
-     a child's z-index can never beat the effects panel's torn-edge image,
-     which lives in a higher sibling stacking context, regardless of the
-     value used, so it was rendering correctly but visually buried under
-     the torn paper the whole time.
-   - **Copy / paste / duplicate**: `lib/imageNode.ts: duplicatePlacedImage()`
-     clones a photo (new id, fresh layer ids, offset position). Wired as a
-     duplicate button on the selected node (top-left, mirrors the delete
-     button), Cmd/Ctrl+D, Cmd/Ctrl+C then Cmd/Ctrl+V (cascades diagonally on
-     repeated paste), and a native `paste` handler that imports a real image
-     from the OS clipboard (a screenshot, a copied image) when there is one.
-   - **Drag-to-reorder** (`EffectsPanel.tsx`): a grab handle (⠿) on each
-     stacked layer, live reorder as the pointer crosses a neighbour's
-     midpoint (not just on drop). The existing ↑/↓ buttons stay. Tracks the
-     dragged id in a ref, not state, pointermove can fire faster than a
-     state update commits between events, which silently dropped moves.
-   - **Export rebuilt** (`lib/exportImage.ts`, `ExportModal.tsx`): re-renders
-     the full effect stack fresh at export resolution (was exporting the
-     small on-page canvas as-is). A preset cover-fits the source into the
-     target frame, matching `binkli-reference`'s old behaviour; "Original
-     size" skips that. Six presets (Square Post, Story, Poster, Album Cover,
-     Wallpaper, Desktop) each carry an existing pastel token for their
-     swatch, PNG/JPG choice, busy state while rendering.
-9. Audit against the old app, 24 more effects, text nodes, panel rebuild —
-   **DONE.** Audited `binkli-reference` feature by feature (see "Still missing
-   from the old app" below for what is knowingly not ported).
-   - **Effects: 35 → 59.** Added Invert, Solarize, Levels, Colour Balance,
-     Channel Swap, Find Edges, Emboss, Oil Paint (Kuwahara), Crosshatch,
-     Comic, Crystallize, Twirl, Bulge, Wave, Kaleidoscope, Pixel Sort, Slice
-     Shift, Bloom, Light Leak, Thermal, CMYK Print (real 4-ink screen angles),
-     Dot Matrix, JPEG Crush, CRT Lines. Catalog regrouped into 9 categories
-     (Stylize and Glitch are new).
-   - **Word Fill is properly its own effect now**: `textMaskText` means the
-     mask is built from the user's words, not fixed lorem, plus a paper colour.
-   - **Text nodes** (`lib/textEffects.ts`): a node is now either photo-backed
-     (`src`) or text-backed (`text`). Text renders to the same `<canvas>`, so
-     the whole image effect stack, grain, recipes and export work on it with
-     no special-casing. 22 text effects across Basics / Dimension / Light /
-     Motion / Broken, each with a live preview tile drawn in the node's own
-     font and colours.
-   - **Effect visibility**: every stacked layer has an eye toggle. The
-     `visible` flag already existed in the type and was honoured by both
-     renderers — it just had no UI.
-   - **Panel rebuilt**, it was a single 59-effect scroll: now Text / Add /
-     Stack tabs, a search box, and reorder/remove moved into the expanded
-     layer body (in the collapsed row they squeezed layer names down to
-     "Oil Pa…"). Panel widened 320 → 356px.
-   - **Floating stickers are back.** The old app had 28 vector-drawn doodles
-     with cursor repulsion and collisions; the rebuild had 4 static images.
-     Now the real die-cut scans drift, bounce and scatter from the pointer.
-   - **Bugs fixed**: resizing re-ran the entire effect stack on every
-     pointermove (a 3-effect stack made dragging unusable, now ~6ms/move,
-     re-rastered once on release); the canvas bitmap ignored its own 4px
-     print border so every photo was squashed ~8px against its box; a
-     duplicate shared its original's object URL, so deleting either one blanked
-     the other; `setPointerCapture` could throw and abort drag setup.
-   - **Bring to front / send to back** restored (`]` / `[`, or the buttons on
-     a selected node).
-10. **The five remaining gaps from #9 — DONE.** Pan/zoom, frames, cutout,
-   Gradient Lab, demo seeding are all in now, closing the old app's
-   feature gap entirely (everything genuinely lost in the rebuild is
-   ported; what's left unported was cut on purpose — see the top of this
-   file's "Why this is a rebuild").
-   - **Pan/zoom** (`NotebookCanvas.tsx`): scroll to zoom (25%-300%), drag
-     empty paper to pan, a scale badge (bottom-center, click to reset) —
-     matches the pre-rebuild app, plus one fix: React's synthetic `onWheel`
-     is passive by default, so `preventDefault()` inside it silently failed
-     and errored in dev. Wheel zoom now binds a real, non-passive listener.
-     `ImageNode`/`FrameNode` both take a `scale` prop and divide pointer
-     deltas by it, so drag/resize track correctly at any zoom level.
-   - **Frames** (`FrameNode.tsx`): 6 presets (iPhone 14, Android, Square
-     Post, 16:9 Slide, Laptop, Desktop) as draggable layout guides — a
-     label tab, a dimension readout, a dot grid. Guides only, no effect
-     stack, no resize/rotate; `+ frame` opens a preset picker.
-   - **Cutout + background removal** (`lib/cutout.ts`, ported near-verbatim):
-     5 edge shapes (none/torn/rough/clean/circle) and a from-scratch
-     background remover (perimeter k-means clustering + feathered alpha,
-     no bundled model). Lives in the Stack tab, photo nodes only. Order
-     matters and is preserved from the original: bg-removal alpha is
-     computed off the untouched source, the effect stack runs on full
-     colour, the alpha mask multiplies back in, then grain, then the
-     cutout shape — so an effect never sees a photo with a hole already in
-     it. Wired into both the live `ImageNode` render and `exportImage.ts`.
-   - **Gradient Lab** (`lib/gradients.ts` ported near-verbatim,
-     `GradientLab.tsx` new): 12 presets (linear/radial/aurora/blob/mesh/
-     sweep types) render to a canvas and drop onto the page as an ordinary
-     photo node — same effect stack, grain, cutout and export as anything
-     else. Built as a compact preset grid in this app's own modal
-     chrome (reuses `.export-panel`) rather than porting the original's
-     424-line live-tuning UI (grain/blur/noise sliders); picking a
-     generated background and then styling it with the effect stack was
-     judged the more valuable 80% for the size of the port.
-   - **Demo seeding** (`lib/demos.ts`, new): the page now opens with 5
-     placed photos instead of empty. Unlike the original's demos.ts
-     (~150 lines of procedural canvas art), these are the real
-     sticker/folder scans already in `public/`, per the "real assets, not
-     vectors" rule — reuses assets instead of adding new generation code.
-
-11. **Export bg-removal bug, text-box mask bleed, font expansion — DONE (2026-09-16).**
-   - **Cutout export bug**: `lib/exportImage.ts` never called `removeBackground()`/
-     `applyCutoutMask()` — those only ran in the live `ImageNode.tsx` canvas.
-     A PNG export with "remove background" checked shipped the original,
-     un-cut background (reported as "coming out as a white background").
-     Fixed by mirroring the live pipeline in `exportPlacedImage`/`finishExport`:
-     snapshot the bg-removal alpha off the untouched fitted image, run the
-     effect stack, multiply the alpha back in, then grain, then the cutout
-     shape. Verified end-to-end in-browser: exported PNG alpha is 0 at the
-     background and 255 on the subject.
-   - **Text "mask field" bleed**: some effects (e.g. Pixelate) paint an
-     opaque full-canvas rect before compositing; on a text node — whose
-     canvas starts transparent outside the glyphs — that turned the whole
-     rectangular text box solid instead of only affecting the letters.
-     Fixed by snapshotting the glyph alpha before the effect stack runs and
-     clipping back to it after (`ImageNode.tsx` render(), and the matching
-     path in `exportImage.ts` for text export), the same technique already
-     used for photo bg-removal alpha.
-   - **More fonts**: `TEXT_FONTS` grew from 5 to 17 (added Caveat, Shadows
-     Into Light, Architects Daughter, Gochi Hand, Indie Flower, Satisfy,
-     Amatic SC, Bangers, Special Elite, Rock Salt, Bebas Neue, Anton), all
-     via Google Fonts `<link>` in `index.html`. Plain dropdown, no search —
-     the user said "for now", so no live Google Fonts API integration.
-
-## Design tokens quick reference
-
-See `src/styles/tokens.css` for the full list. Highlights: warm paper bg
-`#FBF6EE`, ink `#14121F`, cobalt accent `#2D3BCC`, signature "sticker button"
-shadow (`0 3px 0 var(--ink)` — flat offset, not a blur). Fonts: Permanent
-Marker (headline marker style), Kalam / Patrick Hand (handwritten body),
-IBM Plex Mono (labels/mono), Plus Jakarta Sans (UI sans).
+Each of those docs is scoped to its own topic — read the one that matches
+the task, not all of them.
 
 ## Standing preferences (carried over from the user's general working style)
 
