@@ -101,7 +101,7 @@
   top: 28px;
   left: 28px;
   bottom: 28px;
-  right: 260px;
+  right: 296px;
   z-index: 1;
 }
 
@@ -152,13 +152,15 @@
    top-level stacking order. From inside canvas-area it would be visually
    painted under the effects panel's torn edge, a sibling stacking context
    at a higher z-index that no z-index on a canvas-area descendant can beat. */
-.canvas-add-btn {
+.canvas-add-group {
   position: absolute;
   top: 42px;
-  right: 274px;
+  right: 310px;
   z-index: 45;
-  cursor: pointer;
+  display: flex;
+  gap: 8px;
 }
+.canvas-add-group .sticker-btn { cursor: pointer; }
 
 /* ── Image nodes (user photos) ─────────────────────────────────────── */
 
@@ -181,6 +183,12 @@
   box-sizing: border-box;
   pointer-events: none;
   user-select: none;
+}
+/* Text sits straight on the paper — no print border, no card shadow. */
+.image-node.is-text canvas {
+  border: none;
+  box-shadow: none;
+  background: none;
 }
 .image-node.selected canvas {
   outline: 2.5px dashed var(--cobalt);
@@ -216,6 +224,30 @@
   background: var(--cobalt);
   transform: translateX(-50%);
 }
+.image-node-stack {
+  position: absolute;
+  bottom: -14px;
+  left: -14px;
+  display: flex;
+  gap: 4px;
+}
+.image-node-stack button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid #fff;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
+}
+.image-node-stack button:hover { background: var(--butter); }
+
 .image-node-duplicate {
   position: absolute;
   top: -14px;
@@ -285,8 +317,8 @@
   right: 0;
   bottom: 0;
   z-index: 40;
-  width: 320px;
-  padding: 74px 22px 24px 46px;
+  width: 356px;
+  padding: 74px 20px 24px 44px;
   color: var(--ink);
   /* Warm cream matching the torn-edge PNG fill */
   background-color: #F4EAD2;
@@ -333,7 +365,73 @@
   transform: rotate(-2deg);
   margin-bottom: 4px;
 }
-.panel-head { position: relative; margin-bottom: 18px; }
+.panel-head { position: relative; margin-bottom: 12px; }
+
+/* Tabs keep the stack, the catalog and the text editor from fighting over one
+   long scroll, which is what made the panel feel like a wall of controls. */
+.panel-tabs {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 14px;
+  border: 1.5px solid var(--border-3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.panel-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-2);
+  font-family: var(--font-hand-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.panel-tab:hover { color: var(--ink); }
+.panel-tab.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 2px 0 rgba(20, 18, 31, 0.25);
+}
+.panel-tab-count {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+}
+.panel-tab.is-active .panel-tab-count { background: rgba(255, 255, 255, 0.24); }
+.panel-tab:not(.is-active) .panel-tab-count { background: var(--surface-3); }
+
+.panel-muted {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  text-transform: none;
+}
+
+.fx-search {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--border-3);
+  border-radius: 999px;
+}
+.fx-search::placeholder { color: var(--text-3); }
+.fx-search:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
 .panel-empty {
   position: relative;
   display: flex;
@@ -483,6 +581,129 @@
   user-select: none;
 }
 .fx-layer-grab:active { cursor: grabbing; color: var(--ink); }
+.fx-layer.is-hidden { opacity: 0.55; }
+.fx-layer.is-hidden .fx-layer-thumb { filter: grayscale(1); }
+.fx-layer-eye {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fx, var(--ink));
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.fx-layer.is-hidden .fx-layer-eye { color: var(--text-3); }
+.fx-layer-eye:hover { transform: scale(1.15); }
+
+/* ── Text node editor ─────────────────────────────────────────────── */
+
+.tx-input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--border-3);
+  border-radius: 10px;
+  resize: vertical;
+}
+.tx-input:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tx-row .fx-select { flex: 1; }
+
+.seg-mini {
+  display: inline-flex;
+  border: 1.5px solid var(--border-3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.seg-mini button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: none;
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.seg-mini button.is-active { background: var(--ink); color: var(--paper); }
+
+.tx-swatch {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border-3);
+  border-radius: 8px;
+  background: #fff;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.tx-swatch input[type='color'] {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-3);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.tx-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.tx-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 4px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--border-3);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tx-tile:hover { background: #fff; border-color: var(--ink); }
+.tx-tile.is-active {
+  background: #fff;
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
+}
+.tx-tile-art {
+  width: 100%;
+  height: 46px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  object-fit: contain;
+}
+.tx-tile-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  color: var(--text-2);
+  text-align: center;
+}
 
 .fx-layer-head {
   display: flex;
@@ -540,31 +761,39 @@
 }
 .fx-layer-meta {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .fx-layer-caret {
   flex: none;
   color: var(--text-3);
   font-size: 10px;
 }
+/* Reorder/remove live inside the expanded body — in the collapsed row they
+   squeezed the layer name down to three truncated characters. */
 .fx-layer-tools {
-  flex: none;
   display: flex;
-  gap: 3px;
+  gap: 5px;
+  margin-bottom: 2px;
 }
 .fx-layer-tools button {
-  width: 18px;
-  height: 18px;
+  flex: 1;
+  height: 22px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border-3);
   background: #fff;
-  border-radius: 4px;
+  border-radius: 5px;
   padding: 0;
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
   line-height: 1;
   color: var(--text-2);
+  cursor: pointer;
 }
 .fx-layer-tools button:disabled { opacity: 0.3; }
 .fx-layer-tools button:hover:not(:disabled) { background: var(--surface-3); }
@@ -686,7 +915,7 @@
 .folder-shelf {
   position: absolute;
   left: 0;
-  right: 320px;
+  right: 356px;
   bottom: 0;
   z-index: 60;
   background: var(--surface-3);
@@ -876,6 +1105,25 @@
   pointer-events: none;
   user-select: none;
   filter: drop-shadow(2px 4px 5px rgba(20, 18, 31, 0.28));
+}
+
+/* Ambient floating stickers — click-through, so a photo underneath still
+   takes every pointer event. */
+.floating-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.floating-sticker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+  will-change: transform;
+  user-select: none;
+  filter: drop-shadow(2px 4px 6px rgba(20, 18, 31, 0.24));
 }
 
 .doodle-star {

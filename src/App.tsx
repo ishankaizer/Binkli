@@ -7,7 +7,7 @@ import FolderShelf from './components/FolderShelf';
 import ExportModal from './components/ExportModal';
 import SplashScreen from './components/SplashScreen';
 import { NOTEBOOKS, type NotebookKey } from './lib/textures';
-import { createPlacedImage, duplicatePlacedImage, type PlacedImage } from './lib/imageNode';
+import { createPlacedImage, createTextNode, duplicatePlacedImage, type PlacedImage } from './lib/imageNode';
 import { applyRecipe, type Recipe } from './lib/recipes';
 import { exportPlacedImage, type ExportFileType, type ExportPreset } from './lib/exportImage';
 import './styles/workstation.css';
@@ -40,18 +40,39 @@ export default function App() {
   const deleteImage = useCallback((id: string) => {
     setImages((prev) => {
       const target = prev.find((img) => img.id === id);
-      if (target) URL.revokeObjectURL(target.src);
-      return prev.filter((img) => img.id !== id);
+      const rest = prev.filter((img) => img.id !== id);
+      // A duplicate shares its original's object URL, so only release it once
+      // nothing else on the page is still drawing from it.
+      if (target?.src && !rest.some((img) => img.src === target.src)) {
+        URL.revokeObjectURL(target.src);
+      }
+      return rest;
     });
     setSelectedId((cur) => (cur === id ? null : cur));
   }, []);
 
   const clearAll = useCallback(() => {
     setImages((prev) => {
-      prev.forEach((img) => URL.revokeObjectURL(img.src));
+      new Set(prev.map((img) => img.src).filter(Boolean)).forEach((src) => URL.revokeObjectURL(src));
       return [];
     });
     setSelectedId(null);
+  }, []);
+
+  /** Nodes paint in array order, so front/back is just a move within it. */
+  const restack = useCallback((id: string, to: 'front' | 'back') => {
+    setImages((prev) => {
+      const node = prev.find((img) => img.id === id);
+      if (!node) return prev;
+      const rest = prev.filter((img) => img.id !== id);
+      return to === 'front' ? [...rest, node] : [node, ...rest];
+    });
+  }, []);
+
+  const addText = useCallback((centerX: number, centerY: number) => {
+    const node = createTextNode(centerX, centerY);
+    setImages((prev) => [...prev, node]);
+    setSelectedId(node.id);
   }, []);
 
   const duplicateImage = useCallback(
@@ -117,11 +138,17 @@ export default function App() {
       } else if (meta && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         duplicateImage(selectedId);
+      } else if (e.key === ']') {
+        e.preventDefault();
+        restack(selectedId, 'front');
+      } else if (e.key === '[') {
+        e.preventDefault();
+        restack(selectedId, 'back');
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedId, deleteImage, copyImage, duplicateImage]);
+  }, [selectedId, deleteImage, copyImage, duplicateImage, restack]);
 
   // A single native paste handler covers both sources: a real image on the OS
   // clipboard (a screenshot, an image copied from another app) is imported as
@@ -170,7 +197,9 @@ export default function App() {
         onUpdate={updateImage}
         onDelete={deleteImage}
         onDuplicate={duplicateImage}
+        onRestack={restack}
         onAddFiles={addFiles}
+        onAddText={addText}
       />
 
       <EffectsPanel image={selectedImage} onUpdate={updateImage} />

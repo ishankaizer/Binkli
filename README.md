@@ -126,6 +126,8 @@ src/
     effectThumbs.ts              useEffectThumbs() hook — renders every catalog effect onto a 64px crop of the
                                   selected photo, cached per source image, so the panel shows real previews
     recipes.ts                   RECIPES — 18 preset effect stacks ported from binkli-reference, + applyRecipe()
+    textEffects.ts                editable text as a node — TextConfig, 22 text effects, renderTextCanvas().
+                                   Text draws to a canvas, so the image effect stack composites on top of it
     exportImage.ts                EXPORT_PRESETS + exportPlacedImage() — re-renders the effect stack fresh at
                                    export resolution (cover-fit into a preset, or native size) and downloads it
   components/
@@ -135,6 +137,7 @@ src/
                                 renders the "+ add image" button as a sibling, not a child (see Status #8)
     ImageNode.tsx              a placed photo: <canvas> raster compositing + move/resize/rotate/duplicate/delete/select
     CanvasDecor.tsx            ambient washi tape + placed stickers on the canvas
+    FloatingStickers.tsx       the drifting sticker layer — cursor repulsion, collisions, edge bounce
     EffectsPanel.tsx           right rail; ordered effect-stack editor (drag handle + move/remove/opacity/params) +
                                 grain + per-effect live thumbnails (see Status #7, #8)
     FolderShelf.tsx            bottom drawer of recipe cards, wired to the effects engine (see Status #7)
@@ -276,6 +279,45 @@ references/                        78 design reference images
      size" skips that. Six presets (Square Post, Story, Poster, Album Cover,
      Wallpaper, Desktop) each carry an existing pastel token for their
      swatch, PNG/JPG choice, busy state while rendering.
+9. Audit against the old app, 24 more effects, text nodes, panel rebuild —
+   **DONE.** Audited `binkli-reference` feature by feature (see "Still missing
+   from the old app" below for what is knowingly not ported).
+   - **Effects: 35 → 59.** Added Invert, Solarize, Levels, Colour Balance,
+     Channel Swap, Find Edges, Emboss, Oil Paint (Kuwahara), Crosshatch,
+     Comic, Crystallize, Twirl, Bulge, Wave, Kaleidoscope, Pixel Sort, Slice
+     Shift, Bloom, Light Leak, Thermal, CMYK Print (real 4-ink screen angles),
+     Dot Matrix, JPEG Crush, CRT Lines. Catalog regrouped into 9 categories
+     (Stylize and Glitch are new).
+   - **Word Fill is properly its own effect now**: `textMaskText` means the
+     mask is built from the user's words, not fixed lorem, plus a paper colour.
+   - **Text nodes** (`lib/textEffects.ts`): a node is now either photo-backed
+     (`src`) or text-backed (`text`). Text renders to the same `<canvas>`, so
+     the whole image effect stack, grain, recipes and export work on it with
+     no special-casing. 22 text effects across Basics / Dimension / Light /
+     Motion / Broken, each with a live preview tile drawn in the node's own
+     font and colours.
+   - **Effect visibility**: every stacked layer has an eye toggle. The
+     `visible` flag already existed in the type and was honoured by both
+     renderers — it just had no UI.
+   - **Panel rebuilt**, it was a single 59-effect scroll: now Text / Add /
+     Stack tabs, a search box, and reorder/remove moved into the expanded
+     layer body (in the collapsed row they squeezed layer names down to
+     "Oil Pa…"). Panel widened 320 → 356px.
+   - **Floating stickers are back.** The old app had 28 vector-drawn doodles
+     with cursor repulsion and collisions; the rebuild had 4 static images.
+     Now the real die-cut scans drift, bounce and scatter from the pointer.
+   - **Bugs fixed**: resizing re-ran the entire effect stack on every
+     pointermove (a 3-effect stack made dragging unusable, now ~6ms/move,
+     re-rastered once on release); the canvas bitmap ignored its own 4px
+     print border so every photo was squashed ~8px against its box; a
+     duplicate shared its original's object URL, so deleting either one blanked
+     the other; `setPointerCapture` could throw and abort drag setup.
+   - **Bring to front / send to back** restored (`]` / `[`, or the buttons on
+     a selected node).
+10. **Still missing from the old app** (known, not yet ported — flag if
+   wanted): canvas pan/zoom with a scale badge, frame preset overlays
+   (`FrameNode`), background removal + cutout masks (`lib/cutout.ts`, 289
+   lines), the Gradient Lab, and the seeded demo nodes on first load.
 
 ## Design tokens quick reference
 

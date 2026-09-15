@@ -1,4 +1,5 @@
 import { STICKERS } from '../lib/stickers';
+import FloatingStickers from './FloatingStickers';
 
 /**
  * Ambient scrapbook decor on the notebook page — washi tape plus REAL die-cut
@@ -41,6 +42,8 @@ export default function CanvasDecor() {
       <div className="doodle-note" style={{ bottom: '10%', right: '30%', fontSize: 22 }}>
         moo.
       </div>
+
+      <FloatingStickers />
     </>
   );
 }

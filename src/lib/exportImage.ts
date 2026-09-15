@@ -1,5 +1,6 @@
 import { applyEffectLayer, applyGrainOverlay } from './effects';
 import type { PlacedImage } from './imageNode';
+import { fontsReady, renderTextCanvas } from './textEffects';
 
 export interface ExportPreset {
   id: string;
@@ -44,6 +45,17 @@ export async function exportPlacedImage(
   fileType: ExportFileType,
   preset: ExportPreset | null,
 ): Promise<void> {
+  // Text is re-drawn at export scale rather than upscaled, so it stays sharp
+  // at 3000px the same way a photo's own pixels do.
+  if (image.text) {
+    await fontsReady();
+    const scale = preset ? Math.max(preset.width / image.width, preset.height / image.height) : 3;
+    const targetW = preset?.width ?? Math.round(image.width * scale);
+    const targetH = preset?.height ?? Math.round(image.height * scale);
+    const drawn = renderTextCanvas({ ...image.text, size: image.text.size * scale }, targetW, targetH);
+    return finishExport(drawn, image, targetW, targetH, fileType, preset);
+  }
+
   const imgEl = await loadImage(image.src);
 
   const targetW = preset?.width ?? (imgEl.naturalWidth || image.width);
@@ -77,6 +89,19 @@ export async function exportPlacedImage(
     initCtx.drawImage(imgEl, 0, 0, targetW, targetH);
   }
 
+  finishExport(work, image, targetW, targetH, fileType, preset);
+}
+
+/** Folds the effect stack over an already-drawn base, then downloads it. */
+function finishExport(
+  base: HTMLCanvasElement,
+  image: PlacedImage,
+  targetW: number,
+  targetH: number,
+  fileType: ExportFileType,
+  preset: ExportPreset | null,
+) {
+  let work = base;
   for (const layer of image.effectStack) {
     if (layer.visible === false) continue;
     const result = applyEffectLayer(work, layer, targetW, targetH);

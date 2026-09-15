@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { applyEffectLayer, applyGrainOverlay } from '../lib/effects';
+import { fontsReady, renderTextCanvas } from '../lib/textEffects';
 import type { PlacedImage } from '../lib/imageNode';
 
 interface ImageNodeProps {
@@ -10,6 +11,7 @@ interface ImageNodeProps {
   onUpdate: (id: string, patch: Partial<PlacedImage>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onRestack: (id: string, to: 'front' | 'back') => void;
 }
 
 type DragMode = 'move' | 'resize' | 'rotate';
@@ -24,28 +26,57 @@ interface DragState {
   startAngle: number;
 }
 
-export default function ImageNode({ image, selected, onSelect, onUpdate, onDelete, onDuplicate }: ImageNodeProps) {
+/** Photo nodes get a print border; text floats bare on the paper. */
+const PHOTO_BORDER = 4;
+
+/** Capture keeps the drag alive outside the handle. A pointer that has already
+    been released throws here, and that must not abort the rest of the drag setup. */
+function capturePointer(el: Element, pointerId: number) {
+  try {
+    el.setPointerCapture(pointerId);
+  } catch {
+    /* pointer already gone — the drag still works, it just isn't captured */
+  }
+}
+
+export default function ImageNode({ image, selected, onSelect, onUpdate, onDelete, onDuplicate, onRestack }: ImageNodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const loadedRef = useRef(false);
+  // While a resize drag is live the canvas is just stretched by CSS. Re-running
+  // a whole effect stack on every pointermove is what made resizing crawl.
+  const resizingRef = useRef(false);
+
+  const isText = image.text !== undefined;
 
   // Raster compositing: fold the effect stack in order (each layer's output
   // feeds the next), then the grain overlay on top. Order-dependent by design.
   const render = useCallback(() => {
     const canvas = canvasRef.current;
-    const img = imgRef.current;
-    if (!canvas || !img || !img.complete) return;
+    if (!canvas) return;
 
-    const w = image.width, h = image.height;
+    const inset = isText ? 0 : PHOTO_BORDER * 2;
+    const w = Math.max(1, Math.round(image.width - inset));
+    const h = Math.max(1, Math.round(image.height - inset));
+
+    let source: HTMLCanvasElement | HTMLImageElement | null = null;
+    if (isText) {
+      source = renderTextCanvas(image.text!, w, h);
+    } else {
+      const img = imgRef.current;
+      if (!img || !img.complete) return;
+      source = img;
+    }
+
     canvas.width = w;
     canvas.height = h;
 
     let workCanvas = document.createElement('canvas');
     workCanvas.width = w;
     workCanvas.height = h;
-    workCanvas.getContext('2d', { willReadFrequently: true })!.drawImage(img, 0, 0, w, h);
+    workCanvas.getContext('2d', { willReadFrequently: true })!.drawImage(source, 0, 0, w, h);
 
     for (const layer of image.effectStack) {
       if (layer.visible === false) continue;
@@ -70,9 +101,16 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
     ctx.drawImage(workCanvas, 0, 0);
 
     if (image.grain > 0) applyGrainOverlay(ctx, w, h, image.grain);
-  }, [image.effectStack, image.grain, image.width, image.height]);
+  }, [isText, image.text, image.effectStack, image.grain, image.width, image.height]);
 
   useEffect(() => {
+    if (isText) {
+      // Canvas draws with whatever font is resolved at call time, so wait for
+      // the webfont once, otherwise the first paint is in a fallback face.
+      let cancelled = false;
+      fontsReady().then(() => { if (!cancelled) render(); });
+      return () => { cancelled = true; };
+    }
     const img = new Image();
     img.src = image.src;
     img.onload = () => {
@@ -87,16 +125,18 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
       render();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [image.src]);
+  }, [image.src, isText]);
 
   useEffect(() => {
-    if (imgRef.current?.complete) render();
-  }, [render]);
+    if (resizingRef.current) return;
+    if (isText || imgRef.current?.complete) render();
+  }, [render, isText]);
 
   const beginDrag = (mode: DragMode) => (e: ReactPointerEvent) => {
     e.stopPropagation();
     onSelect(image.id);
-    (e.target as Element).setPointerCapture(e.pointerId);
+    capturePointer(e.target as Element, e.pointerId);
+    if (mode === 'resize') resizingRef.current = true;
 
     let centerX = 0;
     let centerY = 0;
@@ -130,13 +170,18 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
   };
 
   const onDragEnd = () => {
+    const wasResizing = dragRef.current?.mode === 'resize';
     dragRef.current = null;
+    if (wasResizing) {
+      resizingRef.current = false;
+      render(); // one sharp re-render at the final size
+    }
   };
 
   return (
     <div
       ref={nodeRef}
-      className={`image-node${selected ? ' selected' : ''}`}
+      className={`image-node${selected ? ' selected' : ''}${isText ? ' is-text' : ''}`}
       style={{
         left: image.x,
         top: image.y,
@@ -148,9 +193,10 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
       onPointerDown={beginDrag('move')}
       onPointerMove={onDragMove}
       onPointerUp={onDragEnd}
+      onPointerCancel={onDragEnd}
       onClick={(e) => e.stopPropagation()}
     >
-      <canvas ref={canvasRef} width={image.width} height={image.height} />
+      <canvas ref={canvasRef} />
 
       {selected && (
         <>
@@ -159,7 +205,7 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
             className="image-node-duplicate"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onDuplicate(image.id)}
-            aria-label="duplicate image"
+            aria-label="duplicate"
             title="Duplicate (Cmd/Ctrl+D)"
           >
             ⧉
@@ -169,21 +215,43 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
             className="image-node-delete"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onDelete(image.id)}
-            aria-label="delete image"
+            aria-label="delete"
           >
             ×
           </button>
+          <div className="image-node-stack">
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onRestack(image.id, 'front')}
+              aria-label="bring to front"
+              title="Bring to front ( ] )"
+            >
+              ⤒
+            </button>
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onRestack(image.id, 'back')}
+              aria-label="send to back"
+              title="Send to back ( [ )"
+            >
+              ⤓
+            </button>
+          </div>
           <div
             className="image-node-handle image-node-rotate"
             onPointerDown={beginDrag('rotate')}
             onPointerMove={onDragMove}
             onPointerUp={onDragEnd}
+            onPointerCancel={onDragEnd}
           />
           <div
             className="image-node-handle image-node-resize"
             onPointerDown={beginDrag('resize')}
             onPointerMove={onDragMove}
             onPointerUp={onDragEnd}
+            onPointerCancel={onDragEnd}
           />
         </>
       )}

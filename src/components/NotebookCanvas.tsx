@@ -14,7 +14,9 @@ interface NotebookCanvasProps {
   onUpdate: (id: string, patch: Partial<PlacedImage>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onRestack: (id: string, to: 'front' | 'back') => void;
   onAddFiles: (files: File[], centerX: number, centerY: number) => void;
+  onAddText: (centerX: number, centerY: number) => void;
 }
 
 export default function NotebookCanvas({
@@ -26,7 +28,9 @@ export default function NotebookCanvas({
   onUpdate,
   onDelete,
   onDuplicate,
+  onRestack,
   onAddFiles,
+  onAddText,
 }: NotebookCanvasProps) {
   const pageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,13 +92,21 @@ export default function NotebookCanvas({
           the workstation's own top-level stacking order, otherwise it would
           be painted under the effects panel's torn-paper edge, which lives
           in a higher sibling stacking context no in-canvas z-index can beat. */}
-      <button
-        type="button"
-        className="sticker-btn canvas-add-btn"
-        onClick={openPicker}
-      >
-        + add image
-      </button>
+      <div className="canvas-add-group">
+        <button type="button" className="sticker-btn" onClick={openPicker}>
+          + image
+        </button>
+        <button
+          type="button"
+          className="sticker-btn"
+          onClick={() => {
+            const rect = pageRef.current?.getBoundingClientRect();
+            onAddText(rect ? rect.width / 2 : 300, rect ? rect.height / 2 : 220);
+          }}
+        >
+          + text
+        </button>
+      </div>
 
       <div className="canvas-area">
       <div
@@ -120,6 +132,7 @@ export default function NotebookCanvas({
               onUpdate={handleUpdate}
               onDelete={onDelete}
               onDuplicate={onDuplicate}
+              onRestack={onRestack}
             />
           ))}
         </div>
