@@ -1,15 +1,26 @@
-import { NOTEBOOKS, SCENES, type NotebookKey, type SceneKey } from '../lib/textures';
+import { NOTEBOOKS, type NotebookKey } from '../lib/textures';
 
 interface TopBarProps {
   notebook: NotebookKey;
-  scene: SceneKey;
   onNotebook: (k: NotebookKey) => void;
-  onScene: (k: SceneKey) => void;
   onClear: () => void;
   onFolders: () => void;
+  onExport: () => void;
+  foldersOpen: boolean;
+  hasContent: boolean;
+  hasSelection: boolean;
 }
 
-export default function TopBar({ notebook, scene, onNotebook, onScene, onClear, onFolders }: TopBarProps) {
+export default function TopBar({
+  notebook,
+  onNotebook,
+  onClear,
+  onFolders,
+  onExport,
+  foldersOpen,
+  hasContent,
+  hasSelection,
+}: TopBarProps) {
   return (
     <div className="topbar">
       <div className="wordmark">
@@ -29,28 +40,22 @@ export default function TopBar({ notebook, scene, onNotebook, onScene, onClear, 
         ))}
       </div>
 
-      <div className="picker-group">
-        <span className="picker-label">scene</span>
-        {SCENES.map((s) => (
-          <button
-            key={s.key}
-            className={`picker-chip${scene === s.key ? ' is-active' : ''}`}
-            onClick={() => onScene(s.key)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
       <div className="topbar-spacer" />
 
-      <button className="sticker-btn" onClick={onFolders}>
+      <button className={`sticker-btn${foldersOpen ? ' is-active' : ''}`} onClick={onFolders}>
         recipes
       </button>
-      <button className="sticker-btn" onClick={onClear}>
+      <button className="sticker-btn" onClick={onClear} disabled={!hasContent}>
         clear all
       </button>
-      <button className="sticker-btn accent">export</button>
+      <button
+        className="sticker-btn accent"
+        onClick={onExport}
+        disabled={!hasSelection}
+        title={hasSelection ? 'Download the selected photo as a PNG' : 'Select a photo to export it'}
+      >
+        export
+      </button>
     </div>
   );
 }

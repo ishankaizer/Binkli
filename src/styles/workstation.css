@@ -301,6 +301,65 @@
   transform: rotate(-2deg);
   margin-bottom: 4px;
 }
+.panel-head { position: relative; margin-bottom: 18px; }
+.panel-empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+.panel-empty-mark {
+  font-family: var(--font-marker);
+  font-size: 22px;
+  color: var(--border-3);
+  transform: rotate(20deg);
+}
+.panel-empty p {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0;
+}
+.panel-empty-note { color: var(--text-3) !important; font-size: 12px !important; }
+.panel-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 18px 0 8px;
+}
+.panel-section-head:first-child { margin-top: 0; }
+.panel-count {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.panel-clear {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.panel-clear:hover { text-decoration: underline; }
 .panel-divider {
   position: relative;
   display: block;
@@ -340,93 +399,239 @@
 }
 .panel-group-label:first-of-type { margin-top: 0; }
 
-/* ── Effect stack editor — deliberately plain, look TBD later ───────── */
+/* ── Effect stack editor ──────────────────────────────────────────── */
+
+.fx-stack-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+.fx-stack-empty {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0 0 4px;
+}
 
 .fx-stack {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  margin-bottom: 4px;
 }
+/* --fx is set inline per layer (see effectColor()) so a stack of different
+   effect types reads as distinguishable things, not identical grey rows. */
 .fx-layer {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.65);
   border: 1px solid var(--border-3);
+  border-left: 3px solid var(--fx, var(--border-3));
   border-radius: 8px;
-  padding: 8px;
+  padding: 6px 8px;
   font-family: var(--font-sans);
   font-size: 12px;
 }
+.fx-layer.is-open { background: rgba(255, 255, 255, 0.9); }
+
 .fx-layer-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
 }
-.fx-layer-index {
+.fx-layer-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.fx-layer-step {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--fx, var(--text-3));
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.fx-layer-thumb {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  object-fit: cover;
+  border: 1px solid var(--border-3);
+}
+.fx-layer-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.fx-layer-name {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fx-layer-meta {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-3);
-  width: 14px;
 }
-.fx-layer-name {
-  flex: 1;
-  font-weight: 600;
-  color: var(--ink);
+.fx-layer-caret {
+  flex: none;
+  color: var(--text-3);
+  font-size: 10px;
 }
-.fx-layer-head button {
-  width: 20px;
-  height: 20px;
+.fx-layer-tools {
+  flex: none;
+  display: flex;
+  gap: 3px;
+}
+.fx-layer-tools button {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
   border: 1px solid var(--border-3);
   background: #fff;
   border-radius: 4px;
-  font-size: 11px;
+  padding: 0;
+  font-size: 10px;
   line-height: 1;
+  color: var(--text-2);
 }
-.fx-layer-head button:disabled { opacity: 0.35; }
-.fx-layer-remove {
-  color: var(--red);
-  border-color: var(--red-bg) !important;
+.fx-layer-tools button:disabled { opacity: 0.3; }
+.fx-layer-tools button:hover:not(:disabled) { background: var(--surface-3); }
+.fx-layer-kill { color: var(--red) !important; border-color: var(--red-bg) !important; }
+
+.fx-layer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-2);
 }
 
-.fx-param-row {
+.fx-param {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
   font-size: 11px;
   color: var(--text-2);
 }
-.fx-param-row span:first-child { width: 64px; flex: none; }
-.fx-param-row input[type='range'] { flex: 1; accent-color: var(--cobalt); }
-.fx-param-row input[type='color'] { width: 26px; height: 20px; padding: 0; border: 1px solid var(--border-3); }
-.fx-param-row input[type='text'],
-.fx-param-row select { flex: 1; font-size: 11px; }
+.fx-param-solo { margin-bottom: 4px; }
+.fx-param-label { width: 64px; flex: none; }
+.fx-range { flex: 1; accent-color: var(--cobalt); }
+.fx-color { width: 26px; height: 20px; padding: 0; border: 1px solid var(--border-3); flex: none; }
+.fx-select,
+.fx-text {
+  flex: 1;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border-3);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
 .fx-param-value { width: 28px; text-align: right; flex: none; font-family: var(--font-mono); }
 
-.fx-add-category { margin-bottom: 10px; }
-.fx-add-category-label {
+/* ── Add-effect catalog: a grid of per-effect tiles, grouped by category ── */
+
+.fx-cat { margin-bottom: 14px; }
+.fx-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-3);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
-.fx-add-row {
+.fx-cat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fx, var(--text-3));
+}
+.fx-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.fx-tile {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.fx-add-row button {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  color: var(--ink);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid var(--border-3);
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
 }
-.fx-add-row button:hover { background: var(--cobalt-bg); }
+.fx-tile:hover { background: #fff; border-color: var(--fx, var(--border-3)); }
+.fx-tile.is-applied { border-color: var(--fx, var(--border-3)); background: #fff; }
+.fx-tile-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+.fx-tile-art img { width: 100%; height: 100%; object-fit: cover; }
+.fx-tile-sym {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--fx, var(--text-2));
+}
+.fx-tile-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--fx, var(--ink));
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.fx-tile-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--text-2);
+  text-align: center;
+}
 
 /* ── Folder shelf (recipe folders) ─────────────────────────────────── */
 

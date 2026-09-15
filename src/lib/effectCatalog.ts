@@ -59,21 +59,32 @@ const FINAL_FX: EffectDef[] = [
 
 export interface EffectCategory {
   label: string;
+  /** Accent colour — every effect from this group is tagged with it, so a
+      stack of four effects reads as four distinguishable things at a glance. */
+  color: string;
   defs: EffectDef[];
 }
 
 export const EFFECT_CATALOG: EffectCategory[] = [
-  { label: 'Foundation', defs: FOUNDATION_FX },
-  { label: 'Color',      defs: COLOR_FX },
-  { label: 'Simplify',   defs: SIMPLIFY_FX },
-  { label: 'Print',      defs: PRINT_FX },
-  { label: 'Distort',    defs: DISTORT_FX },
-  { label: 'Light',      defs: LIGHT_FX },
-  { label: 'Final',      defs: FINAL_FX },
+  { label: 'Foundation', color: '#C8A200', defs: FOUNDATION_FX },
+  { label: 'Color',      color: '#7C5CD6', defs: COLOR_FX },
+  { label: 'Simplify',   color: '#2D8FCC', defs: SIMPLIFY_FX },
+  { label: 'Print',      color: '#00966B', defs: PRINT_FX },
+  { label: 'Distort',    color: '#D62B6B', defs: DISTORT_FX },
+  { label: 'Light',      color: '#2D3BCC', defs: LIGHT_FX },
+  { label: 'Final',      color: '#E06A1B', defs: FINAL_FX },
 ];
 
 export const EFFECT_DEFS: EffectDef[] = EFFECT_CATALOG.flatMap((c) => c.defs);
 
 export function effectLabel(type: EffectType): string {
   return EFFECT_DEFS.find((d) => d.type === type)?.label ?? type;
+}
+
+export function effectDef(type: EffectType): EffectDef | undefined {
+  return EFFECT_DEFS.find((d) => d.type === type);
+}
+
+export function effectColor(type: EffectType): string {
+  return EFFECT_CATALOG.find((c) => c.defs.some((d) => d.type === type))?.color ?? '#8A8898';
 }

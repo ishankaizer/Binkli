@@ -1,12 +1,12 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { DragEvent } from 'react';
-import { NOTEBOOKS, type NotebookKey } from '../lib/textures';
+import type { NotebookPaper } from '../lib/textures';
 import type { PlacedImage } from '../lib/imageNode';
 import CanvasDecor from './CanvasDecor';
 import ImageNode from './ImageNode';
 
 interface NotebookCanvasProps {
-  notebook: NotebookKey;
+  paper: NotebookPaper;
   hasContent: boolean;
   images: PlacedImage[];
   selectedId: string | null;
@@ -17,7 +17,7 @@ interface NotebookCanvasProps {
 }
 
 export default function NotebookCanvas({
-  notebook,
+  paper,
   hasContent,
   images,
   selectedId,
@@ -26,16 +26,22 @@ export default function NotebookCanvas({
   onDelete,
   onAddFiles,
 }: NotebookCanvasProps) {
-  const paper = NOTEBOOKS.find((n) => n.key === notebook) ?? NOTEBOOKS[0];
   const pageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dropping, setDropping] = useState(false);
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
+    if (!dropping) setDropping(true);
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    if (e.currentTarget === e.target) setDropping(false);
   };
 
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
+    setDropping(false);
     const rect = pageRef.current?.getBoundingClientRect();
     if (!rect) return;
     const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
@@ -45,48 +51,47 @@ export default function NotebookCanvas({
 
   const openPicker = () => fileInputRef.current?.click();
 
-  // Keep at least MARGIN px of a node inside the page so a drag can never
-  // shove a photo fully outside the notebook's clipped bounds (unreachable).
-  const MARGIN = 40;
-  const handleUpdate = (id: string, patch: Partial<PlacedImage>) => {
-    const rect = pageRef.current?.getBoundingClientRect();
-    const img = images.find((i) => i.id === id);
-    if (!rect || !img) {
-      onUpdate(id, patch);
-      return;
-    }
-    const width = patch.width ?? img.width;
-    const height = patch.height ?? img.height;
-    const clamped = { ...patch };
-    if (patch.x !== undefined) {
-      clamped.x = Math.min(Math.max(patch.x, MARGIN - width), rect.width - MARGIN);
-    }
-    if (patch.y !== undefined) {
-      clamped.y = Math.min(Math.max(patch.y, MARGIN - height), rect.height - MARGIN);
-    }
-    onUpdate(id, clamped);
-  };
-
   const handleFileChange = () => {
     const files = Array.from(fileInputRef.current?.files ?? []);
     const rect = pageRef.current?.getBoundingClientRect();
-    if (files.length && rect) {
-      onAddFiles(files, rect.width / 2, rect.height / 2);
-    }
+    if (files.length && rect) onAddFiles(files, rect.width / 2, rect.height / 2);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Keep a node fully on the page when it fits, so its resize/rotate handles are
+  // always reachable. Oversized photos are allowed to overhang, but only enough
+  // to still be pannable within the page.
+  const handleUpdate = (id: string, patch: Partial<PlacedImage>) => {
+    const rect = pageRef.current?.getBoundingClientRect();
+    const node = images.find((i) => i.id === id);
+    if (!rect || !node || (patch.x === undefined && patch.y === undefined)) {
+      onUpdate(id, patch);
+      return;
+    }
+    const width = patch.width ?? node.width;
+    const height = patch.height ?? node.height;
+    const clampAxis = (v: number, size: number, extent: number) => {
+      const slack = extent - size;
+      return slack >= 0 ? Math.min(Math.max(v, 0), slack) : Math.min(Math.max(v, slack), 0);
+    };
+    const clamped = { ...patch };
+    if (patch.x !== undefined) clamped.x = clampAxis(patch.x, width, rect.width);
+    if (patch.y !== undefined) clamped.y = clampAxis(patch.y, height, rect.height);
+    onUpdate(id, clamped);
   };
 
   return (
     <div className="canvas-area">
       <div
         ref={pageRef}
-        className={`notebook${paper.ruled ? ' ruled' : ''}`}
+        className={`notebook${paper.ruled ? ' ruled' : ''}${dropping ? ' is-dropping' : ''}`}
         style={{ backgroundImage: `url('${paper.texture}')` }}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => onSelect(null)}
       >
-        <div className="margin-line" />
+        {!paper.noMargin && <div className="margin-line" />}
 
         <CanvasDecor />
 
@@ -108,9 +113,12 @@ export default function NotebookCanvas({
             <div>
               <div className="marker">drop an image.</div>
               <div className="sub">…then make it weird.</div>
+              <div className="empty-browse">or click anywhere on the page to browse</div>
             </div>
           </div>
         )}
+
+        {dropping && <div className="drop-veil"><span>drop it</span></div>}
 
         <input
           ref={fileInputRef}

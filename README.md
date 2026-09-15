@@ -123,14 +123,18 @@ src/
     imageNode.ts                PlacedImage type (x/y/width/height/rotation/effectStack/grain), createPlacedImage()
     effects.ts                  the raster effects engine — ~30 canvas-based effect renderers + applyEffectLayer()
     effectCatalog.ts             EFFECT_CATALOG (7 categories x effect defs) for the "add effect" picker
+    effectThumbs.ts              useEffectThumbs() hook — renders every catalog effect onto a 64px crop of the
+                                  selected photo, cached per source image, so the panel shows real previews
+    recipes.ts                   RECIPES — 18 preset effect stacks ported from binkli-reference, + applyRecipe()
   components/
     SplashScreen.tsx           landing screen — matches splash2.png
-    TopBar.tsx                 paper/scene pickers, recipes/clear-all(wired)/export buttons
+    TopBar.tsx                 paper picker (scene backdrop folded in, see Status #7), recipes/clear-all/export (all wired)
     NotebookCanvas.tsx         the page surface; owns drag-drop/file-picker import + position clamping
     ImageNode.tsx              a placed photo: <canvas> raster compositing + move/resize/rotate/delete/select
     CanvasDecor.tsx            ambient washi tape + placed stickers on the canvas
-    EffectsPanel.tsx           right rail; ordered effect-stack editor (add/reorder/remove/opacity/params) + grain
-    FolderShelf.tsx            bottom drawer of recipe-folder cards (display-only, not wired to effects yet)
+    EffectsPanel.tsx           right rail; ordered effect-stack editor (add/reorder/remove/opacity/params) + grain +
+                                per-effect live thumbnails (see Status #7)
+    FolderShelf.tsx            bottom drawer of recipe cards, wired to the effects engine (see Status #7)
 scripts/
   cut_assets.py                 sticker/folder background removal (flood-fill)
   make_torn_paper.py            generates the torn-paper texture PNGs
@@ -193,10 +197,45 @@ references/                        78 design reference images
      reads in a loop, which Chrome flags without that hint.
    - **Not ported from the old app**: cutout/background-removal
      (`lib/cutout.ts`, 289 lines — a separate subsystem, deliberately
-     deferred rather than rushed), recipe presets (`lib/recipes.ts`) wiring
-     to this engine, gradient-lab. Flag if these matter for a future pass.
-6. Export + gradient lab + recipe-folder wiring (folders are currently
-   display-only, clicking a card does nothing yet) — not started
+     deferred rather than rushed), gradient-lab. Recipe wiring is now done,
+     see #7. Flag if cutout/gradient-lab matter for a future pass.
+6. Export — **DONE.** `TopBar`'s export button downloads the selected
+   photo's `<canvas>` as a PNG (`App.tsx: handleExport`). Disabled (with a
+   title tooltip) when nothing is selected.
+7. Recipe wiring + live effect thumbnails + paper/scene merge —
+   **DONE.** Picked back up after a session that ran out of credits mid-way
+   with this work uncommitted (functionally complete, just never landed):
+   - `lib/recipes.ts`: 18 preset effect stacks ported from
+     `binkli-reference/app/lib/recipes.ts` (`RECIPES`, `applyRecipe()`).
+     `FolderShelf` cards call `onApply(recipe)` → `App.tsx: handleRecipe`,
+     which replaces the selected photo's `effectStack` + `grain` wholesale.
+     Disabled with an inline hint ("select a photo on the page first") when
+     nothing is selected.
+   - `lib/effectThumbs.ts`: `useEffectThumbs(src)` renders every catalog
+     effect onto a 64px crop of the *current* photo (cached per source), so
+     both the "add effect" tile grid and each stacked layer's row show a
+     real preview instead of a generic icon.
+   - `EffectsPanel.tsx` rewritten: the stack list is now collapsible rows
+     (thumbnail + name + opacity/setting count, click to expand params),
+     each carrying its category colour via a `--fx` custom property (a
+     4-deep stack reads as 4 distinguishable things); the "add effect" list
+     became a 3-column tile grid grouped by category, each tile showing its
+     live thumbnail and an applied-count badge.
+   - `TopBar`/`lib/textures.ts`: the separate "scene" (backdrop) picker was
+     folded into the paper picker — each `NotebookPaper` now carries its own
+     `backdrop`, so `grid`/`ruled`/`plain`/`meadow`/`dark` is one control
+     instead of two. Also added: Escape to deselect, `clear all`/`export`
+     disabled states, recipes button active-state.
+   - **What was actually missing when this was picked back up**: not the
+     feature logic (it worked, verified end-to-end), but `workstation.css`
+     had no rules at all for ~30 of the new class names the rewritten
+     `EffectsPanel.tsx` introduced (`fx-layer-*`, `fx-param`, `fx-cat-*`,
+     `fx-tile-*`, `panel-head`, `panel-empty*`, `panel-section-head`,
+     `panel-count`, `panel-clear`). Everything rendered as unstyled block
+     flow, passable by accident for plain text, badly overlapping for the
+     flex rows (opacity/level sliders, the layer header). Added the missing
+     CSS; removed the now-dead `.fx-param-row`/`.fx-layer-index`/
+     `.fx-layer-remove`/`.fx-add-row` rules the rewrite had orphaned.
 
 ## Design tokens quick reference
 

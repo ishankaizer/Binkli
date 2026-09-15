@@ -149,7 +149,7 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
       onPointerUp={onDragEnd}
       onClick={(e) => e.stopPropagation()}
     >
-      <canvas ref={canvasRef} width={image.width} height={image.height} />
+      <canvas ref={canvasRef} data-node={image.id} width={image.width} height={image.height} />
 
       {selected && (
         <>
