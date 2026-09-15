@@ -1,0 +1,93 @@
+/* panel/AddTab.tsx: search box + the category grid of per-effect tiles. */
+
+.fx-search {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--border-3);
+  border-radius: 999px;
+}
+.fx-search::placeholder { color: var(--text-3); }
+.fx-search:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
+/* .fx-stack-empty (the "nothing matches"/"nothing stacked" message, also
+   used by StackTab.tsx) lives in EffectsPanel.css. */
+
+.fx-cat { margin-bottom: 14px; }
+.fx-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.fx-cat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fx, var(--text-3));
+}
+.fx-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.fx-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-3);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.fx-tile:hover { background: #fff; border-color: var(--fx, var(--border-3)); }
+.fx-tile.is-applied { border-color: var(--fx, var(--border-3)); background: #fff; }
+.fx-tile-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+.fx-tile-art img { width: 100%; height: 100%; object-fit: cover; }
+.fx-tile-sym {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--fx, var(--text-2));
+}
+.fx-tile-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--fx, var(--ink));
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.fx-tile-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--text-2);
+  text-align: center;
+}

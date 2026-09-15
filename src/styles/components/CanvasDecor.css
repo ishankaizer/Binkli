@@ -1,0 +1,22 @@
+/* CanvasDecor.tsx: ambient washi tape + placed die-cut stickers on the canvas. */
+
+.washi {
+  position: absolute;
+  z-index: 4;
+  height: 34px;
+  width: 116px;
+  opacity: 0.9;
+  box-shadow: 0 2px 6px rgba(20, 18, 31, 0.14);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.washi.pink  { background: repeating-linear-gradient(45deg, #ffb6d9 0 9px, #ff9ec9 9px 18px); }
+.washi.mint  { background: repeating-linear-gradient(45deg, #b6e9d4 0 9px, #9fdcc2 9px 18px); }
+
+.canvas-sticker {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(2px 4px 5px rgba(20, 18, 31, 0.28));
+}

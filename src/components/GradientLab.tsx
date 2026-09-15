@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import '../styles/components/GradientLab.css';
 import { GRADIENT_PRESETS, renderGradient, type GradientPreset } from '../lib/gradients';
 
 interface GradientLabProps {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import '../styles/components/EffectsPanel.css';
 import { EFFECT_CATALOG } from '../lib/effectCatalog';
 import { useEffectThumbs } from '../lib/effectThumbs';
 import type { EffectLayer, EffectParams, EffectType } from '../lib/effects';

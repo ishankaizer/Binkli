@@ -258,3 +258,37 @@ first — see [`architecture.md`](./architecture.md) for current file layout,
       check that ran one representative effect from each of the 9 new
       category files through the real dispatcher, plus a UI smoke test of
       all three panel tabs (Text/Add/Stack, including the cutout controls).
+13. **CSS split by component, text effects engine split — DONE (2026-09-16).**
+    Follow-up to #12: `styles/workstation.css` (1495 lines, every component's
+    CSS in one file) and `lib/textEffects.ts` (545 lines, 22 text-effect
+    renderers inline in one giant switch) were the two remaining files where
+    a small change meant reading or searching something huge. User asked
+    directly for these too, plus the docs kept current on where things live.
+    - `styles/workstation.css` → `styles/components/*.css`, one file per
+      component (`TopBar.css`, `ImageNode.css`, `EffectsPanel.css`,
+      `panel/StackTab.css`, etc.), each imported directly by its own
+      `.tsx` file (`import '../styles/components/X.css'`) rather than one
+      big import in `App.tsx` — open a component, its CSS import tells you
+      exactly which file to edit. Genuinely cross-cutting rules
+      (`.sticker-btn`) moved to `styles/shared.css`, imported once globally;
+      rules shared by 2+ panel tabs stayed in `EffectsPanel.css` with a
+      comment at each usage site. Verified: the full set of top-level class
+      selectors matched exactly between the old file and the new files (set
+      diff, 147 selectors both sides), and the built CSS bundle came out
+      byte-for-byte the same size (26.71 kB) before and after.
+    - `lib/textEffects.ts` → `lib/textEffects/`, split by
+      `TEXT_EFFECT_GROUPS` (Basics/Dimension/Light/Motion/Broken) the same
+      way `lib/effects/` was split by `EFFECT_CATALOG` — see
+      [`effects-engine.md`](./effects-engine.md). Each switch-case body
+      became a named exported function (`renderOutline`, `renderBubble`,
+      etc.) with signature `(ctx, canvas, cfg, layout, strength)`.
+      `index.ts` re-exports everything so `'../lib/textEffects'` kept
+      resolving unchanged. Verified by rendering all 22 effects through
+      both the pre-split and post-split implementations with identical
+      inputs and diffing `canvas.toDataURL()` — byte-identical output on
+      every single effect.
+    - Docs updated to match: `architecture.md`'s file map and a new
+      "Where a component's CSS lives" table, `effects-engine.md` gained a
+      "The text effects engine" section mirroring the image-effects one,
+      and the README's lookup table gained a row pointing UI/styling
+      changes straight at the CSS table instead of the engine docs.

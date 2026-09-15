@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import '../styles/components/FloatingStickers.css';
 import { STICKERS } from '../lib/stickers';
 
 /**

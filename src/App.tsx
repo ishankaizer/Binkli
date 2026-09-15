@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import './styles/components/App.css';
 import TopBar from './components/TopBar';
 import NotebookCanvas from './components/NotebookCanvas';
 import EffectsPanel from './components/EffectsPanel';
@@ -14,7 +15,6 @@ import { applyRecipe, type Recipe } from './lib/recipes';
 import { exportPlacedImage, type ExportFileType, type ExportPreset } from './lib/exportImage';
 import { renderGradient, type GradientPreset } from './lib/gradients';
 import { generateDemos } from './lib/demos';
-import './styles/workstation.css';
 
 export default function App() {
   const [notebook, setNotebook] = useState<NotebookKey>('grid');

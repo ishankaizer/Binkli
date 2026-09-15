@@ -78,7 +78,8 @@ a relative filename and it lands in `X:\CLAUDE\`.
 
 | Task looks like... | Read |
 |---|---|
-| A specific effect renders wrong, or a new effect needs adding | [`docs/effects-engine.md`](./docs/effects-engine.md) |
+| A specific image or text effect renders wrong, or a new one needs adding | [`docs/effects-engine.md`](./docs/effects-engine.md) |
+| A UI change — styling, spacing, colour, layout of any component | [`docs/architecture.md`](./docs/architecture.md#where-a-components-css-lives) — find the component, open its one CSS file, edit, done |
 | Something works live but breaks on export (or vice versa) | [`docs/effects-engine.md`](./docs/effects-engine.md#export-vs-live-preview) |
 | Where a file lives, or what a `lib/`/`components/` module owns | [`docs/architecture.md`](./docs/architecture.md) |
 | "Didn't we already build/try this?" | [`docs/changelog.md`](./docs/changelog.md) |

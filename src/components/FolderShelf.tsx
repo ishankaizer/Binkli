@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import '../styles/components/FolderShelf.css';
 import { RECIPES, type Recipe } from '../lib/recipes';
 
 interface FolderShelfProps {

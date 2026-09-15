@@ -1,3 +1,4 @@
+import '../styles/components/CanvasDecor.css';
 import { STICKERS } from '../lib/stickers';
 import FloatingStickers from './FloatingStickers';
 

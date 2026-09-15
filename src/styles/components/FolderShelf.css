@@ -1,0 +1,90 @@
+/* FolderShelf.tsx: bottom drawer of recipe cards. */
+
+.folder-shelf {
+  position: absolute;
+  left: 0;
+  right: 356px;
+  bottom: 0;
+  z-index: 60;
+  background: var(--surface-3);
+  border-top: 3px solid var(--ink);
+  box-shadow: 0 -12px 30px rgba(20, 18, 31, 0.16);
+  padding: 12px 20px 18px;
+}
+.folder-shelf-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.folder-shelf-title {
+  font-family: var(--font-marker);
+  font-size: 18px;
+  color: var(--ink);
+}
+.folder-shelf-hint {
+  font-family: var(--font-hand);
+  font-size: 15px;
+  color: var(--text-3);
+}
+.folder-shelf-close {
+  margin-left: auto;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  padding: 0 6px;
+}
+.folder-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 6px 2px 10px;
+}
+.folder-card {
+  flex: 0 0 auto;
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 6px;
+}
+.folder-card img {
+  width: 116px;
+  height: auto;
+  filter: drop-shadow(2px 4px 5px rgba(20, 18, 31, 0.22));
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.folder-card:hover img { transform: translateY(-6px) rotate(-2deg); }
+.folder-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  filter: grayscale(0.6);
+}
+.folder-card:disabled img { transform: none; }
+.folder-card-label {
+  font-family: var(--font-hand-2);
+  font-size: 16px;
+  color: var(--ink);
+}
+.folder-card-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--cobalt);
+  background: var(--cobalt-bg);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-top: 1px;
+}
+.folder-card-blurb {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  text-align: center;
+}

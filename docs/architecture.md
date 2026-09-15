@@ -31,16 +31,18 @@ above, not hand-authored SVG/CSS.
 src/
   App.tsx                    top-level state: notebook, scene, splash/folders visibility
   main.tsx                   entry
-  index.css                  global reset
+  index.css                  global reset; @imports tokens.css and shared.css
   styles/
-    tokens.css                design tokens (color, shadow, font vars) — ported verbatim from old globals.css
-    workstation.css           all component styles
+    tokens.css                 design tokens (color, shadow, font vars) — ported verbatim from old globals.css
+    shared.css                  cross-cutting primitives used by 2+ components (currently: .sticker-btn)
+    components/                 one CSS file per component, each imported directly by its .tsx file —
+                                 see "Where a component's CSS lives" below
   lib/
     textures.ts                NOTEBOOKS (paper types) + SCENES (backdrops) + TEXTURES registry
     stickers.ts                STICKERS registry + pickStickers() helper
     folders.ts                 FOLDERS registry (recipe-card content)
     imageNode.ts                PlacedImage type (x/y/width/height/rotation/effectStack/grain), createPlacedImage()
-    effects/                    the raster effects engine, split by category — see effects-engine.md
+    effects/                    the raster IMAGE effects engine, split by category — see effects-engine.md
       index.ts                    applyEffectLayer() dispatcher, applyGrainOverlay(), re-exports types
       types.ts                    EffectType, EffectParams, EffectLayer, GRADIENT_MAP_PRESETS
       helpers.ts                  shared pixel-math helpers
@@ -51,9 +53,12 @@ src/
     effectThumbs.ts              useEffectThumbs() hook — renders every catalog effect onto a 64px crop of the
                                   selected photo, cached per source image, so the panel shows real previews
     recipes.ts                   RECIPES — 18 preset effect stacks ported from binkli-reference, + applyRecipe()
-    textEffects.ts                editable text as a node — TextConfig, TEXT_FONTS (17), 22 text effects,
-                                   renderTextCanvas(). Text draws to a canvas, so the image effect stack
-                                   composites on top of it
+    textEffects/                 the TEXT effects engine — TextConfig, TEXT_FONTS (17), 22 text renderers,
+                                  split by TEXT_EFFECT_GROUPS category — see effects-engine.md
+      index.ts                     renderTextCanvas() dispatcher, re-exports types
+      types.ts                     TextEffectType, TextFontKey, TextConfig, TEXT_FONTS, TEXT_EFFECTS
+      helpers.ts                   layout/prep/scratch/shade/tint helpers
+      basics.ts, dimension.ts, light.ts, motion.ts, broken.ts   one file per TEXT_EFFECT_GROUPS category
     exportImage.ts                EXPORT_PRESETS + exportPlacedImage() — re-renders the effect stack fresh at
                                    export resolution (cover-fit into a preset, or native size) and downloads it.
                                    Independently replicates the live alpha-masking order — see effects-engine.md
@@ -89,6 +94,34 @@ public/
 references/                        78 design reference images
 ```
 
+## Where a component's CSS lives
+
+Every component imports its own CSS file directly (`import '../styles/components/X.css'` at the
+top of `X.tsx`) — open the component file and its CSS import tells you exactly which stylesheet
+to edit next. A class used by more than one component lives in `shared.css` (global primitives,
+imported once from `index.css`) or, within the effects panel specifically, in
+`components/EffectsPanel.css` (rules shared across 2+ panel tabs) — both call this out in a
+comment at the point of use.
+
+| Component | CSS file |
+|---|---|
+| `App.tsx` | `styles/components/App.css` |
+| `TopBar.tsx` | `styles/components/TopBar.css` |
+| `NotebookCanvas.tsx` | `styles/components/NotebookCanvas.css` (canvas, pan/zoom, empty state, zoom badge) |
+| `ImageNode.tsx` | `styles/components/ImageNode.css` |
+| `FrameNode.tsx` | `styles/components/FrameNode.css` |
+| `EffectsPanel.tsx` | `styles/components/EffectsPanel.css` (shell: header, tabs, empty state, section heads, + rules shared across tabs) |
+| `panel/AddTab.tsx` | `styles/components/panel/AddTab.css` |
+| `panel/StackTab.tsx` | `styles/components/panel/StackTab.css` |
+| `panel/TextTab.tsx` | `styles/components/panel/TextTab.css` |
+| `FolderShelf.tsx` | `styles/components/FolderShelf.css` |
+| `SplashScreen.tsx` | `styles/components/SplashScreen.css` |
+| `CanvasDecor.tsx` | `styles/components/CanvasDecor.css` |
+| `FloatingStickers.tsx` | `styles/components/FloatingStickers.css` |
+| `ExportModal.tsx` | `styles/components/ExportModal.css` |
+| `GradientLab.tsx` | `styles/components/GradientLab.css` (reuses ExportModal's `.export-panel` shell) |
+| (cross-cutting: `.sticker-btn`) | `styles/shared.css` |
+
 ## Reference material
 
 - `X:\CLAUDE\references\` — 78 design refs the aesthetic is drawn from
@@ -109,5 +142,5 @@ See `src/styles/tokens.css` for the full list. Highlights: warm paper bg
 shadow (`0 3px 0 var(--ink)` — flat offset, not a blur). Fonts: Permanent
 Marker (headline marker style), Kalam / Patrick Hand (handwritten body),
 IBM Plex Mono (labels/mono), Plus Jakarta Sans (UI sans) — plus 12 more
-handwritten/display fonts in `TEXT_FONTS` (`lib/textEffects.ts`) for text
-nodes specifically.
+handwritten/display fonts in `TEXT_FONTS` (`lib/textEffects/types.ts`) for
+text nodes specifically.

@@ -1,0 +1,170 @@
+/* ExportModal.tsx: format/preset picker + PNG/JPG choice. */
+
+.export-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(20, 18, 31, 0.55);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+.export-panel {
+  background: var(--surface);
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  width: min(720px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 12px 12px 0 rgba(20, 18, 31, 0.16), 0 30px 90px rgba(20, 18, 31, 0.3);
+}
+.export-head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px 16px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--butter-bg);
+}
+.export-title {
+  font-family: var(--font-marker);
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1;
+}
+.export-sub {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--text-2);
+  margin-top: 5px;
+}
+.export-close {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--font-marker);
+  font-size: 17px;
+  box-shadow: var(--sticker-shadow);
+}
+.export-close:hover { background: var(--ink); color: var(--butter-bg); }
+.export-close:disabled { opacity: 0.4; cursor: wait; }
+
+.export-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px 6px;
+  background: var(--paper);
+}
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.export-preset {
+  position: relative;
+  text-align: left;
+  background: var(--surface);
+  border: 2px solid var(--border-2);
+  border-radius: 12px;
+  padding: 10px 10px 9px;
+  cursor: pointer;
+}
+.export-preset:hover { border-color: var(--border-3); }
+.export-preset.is-active {
+  background: var(--preset-bg, var(--cobalt-bg));
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--sticker-shadow);
+}
+.export-preset-art {
+  height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+  border-radius: 8px;
+  border: 1.5px dashed var(--border-2);
+}
+.export-preset-art--original {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.export-preset-swatch {
+  display: block;
+  height: 58px;
+  background: var(--preset-accent, var(--cobalt));
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+}
+.export-preset-name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 8px;
+}
+.export-preset-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.export-filetype-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.export-filetype {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--border-3);
+  border-radius: 10px;
+  font-family: var(--font-marker);
+  font-size: 18px;
+}
+.export-filetype.is-active {
+  background: var(--ink);
+  color: var(--butter);
+  border-color: var(--ink);
+  box-shadow: var(--sticker-shadow);
+}
+.export-filetype-note {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.export-foot {
+  flex: none;
+  padding: 16px 22px 20px;
+  border-top: 2px solid var(--ink);
+  background: var(--surface);
+}
+.export-download {
+  width: 100%;
+  justify-content: center;
+  font-size: 18px;
+  padding: 12px 16px;
+}
+.export-download:disabled { opacity: 0.6; cursor: wait; }

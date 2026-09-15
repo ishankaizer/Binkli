@@ -1,6 +1,7 @@
 // EffectsPanel's "Text" tab: the write/font/colour/effect controls for a text
 // node. Only rendered when the selected node is text-backed.
 
+import '../../styles/components/panel/TextTab.css';
 import { TEXT_EFFECTS, TEXT_EFFECT_GROUPS, TEXT_FONTS, type TextConfig } from '../../lib/textEffects';
 import { TextEffectTile } from './TextEffectTile';
 

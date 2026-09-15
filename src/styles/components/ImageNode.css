@@ -1,0 +1,122 @@
+/* ImageNode.tsx: a placed photo or text node — the canvas frame, drag/resize/
+   rotate handles, and the duplicate/delete/restack buttons. */
+
+.image-node {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  box-sizing: border-box;
+}
+/* The effect stack is raster (canvas), not CSS — see lib/effects/ and
+   ImageNode.tsx's render(). This is the only visual rule the node needs. */
+.image-node canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 4px solid #fff;
+  border-radius: 2px;
+  box-shadow: 0 6px 18px rgba(20, 18, 31, 0.28);
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+}
+/* Text sits straight on the paper — no print border, no card shadow. */
+.image-node.is-text canvas {
+  border: none;
+  box-shadow: none;
+  background: none;
+}
+.image-node.selected canvas {
+  outline: 2.5px dashed var(--cobalt);
+  outline-offset: 4px;
+}
+.image-node-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--cobalt);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
+}
+.image-node-resize {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+.image-node-rotate {
+  left: 50%;
+  top: -28px;
+  transform: translateX(-50%);
+  cursor: grab;
+}
+.image-node-rotate::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: var(--cobalt);
+  transform: translateX(-50%);
+}
+.image-node-stack {
+  position: absolute;
+  bottom: -14px;
+  left: -14px;
+  display: flex;
+  gap: 4px;
+}
+.image-node-stack button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid #fff;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
+}
+.image-node-stack button:hover { background: var(--butter); }
+
+.image-node-duplicate {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--cobalt);
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 13px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
+}
+.image-node-duplicate:hover { background: #2431a8; }
+.image-node-delete {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(20, 18, 31, 0.3);
+}

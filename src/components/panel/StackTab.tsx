@@ -3,6 +3,7 @@
 // only — the cutout shape and background-removal controls.
 
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import '../../styles/components/panel/StackTab.css';
 import { effectColor, effectLabel } from '../../lib/effectCatalog';
 import type { EffectLayer } from '../../lib/effects';
 import type { CutoutOptions, CutoutType } from '../../lib/cutout';

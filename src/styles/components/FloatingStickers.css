@@ -1,0 +1,38 @@
+/* FloatingStickers.tsx: the drifting sticker layer — cursor repulsion,
+   collisions, edge bounce — plus its doodle text decorations. */
+
+/* Click-through, so a photo underneath still takes every pointer event. */
+.floating-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.floating-sticker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+  will-change: transform;
+  user-select: none;
+  filter: drop-shadow(2px 4px 6px rgba(20, 18, 31, 0.24));
+}
+
+.doodle-star {
+  position: absolute;
+  z-index: 4;
+  font-family: var(--font-marker);
+  color: var(--red);
+  pointer-events: none;
+  user-select: none;
+}
+.doodle-note {
+  position: absolute;
+  z-index: 4;
+  font-family: var(--font-hand);
+  color: var(--cobalt);
+  transform: rotate(-6deg);
+  pointer-events: none;
+  user-select: none;
+}

@@ -1,0 +1,24 @@
+/* Cross-cutting primitives used by more than one component. Only put a rule
+   here if it's genuinely shared (check usages before adding) — everything
+   else belongs in styles/components/<Component>.css next to its owner. */
+
+/* Signature sticker button — used by TopBar, ExportModal, NotebookCanvas
+   (the canvas "+ add" group) and SplashScreen. */
+.sticker-btn {
+  font-family: var(--font-hand-2);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 14px;
+  box-shadow: var(--sticker-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.sticker-btn:hover { transform: translateY(-2px); box-shadow: var(--sticker-shadow-lg); }
+.sticker-btn.is-active { background: var(--butter-bg); }
+.sticker-btn.accent { background: var(--cobalt); color: #fff; }
+.sticker-btn.accent:hover { background: #2431a8; }

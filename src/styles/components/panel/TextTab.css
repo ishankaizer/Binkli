@@ -1,0 +1,105 @@
+/* panel/TextTab.tsx: write/font/align/colour controls and the text-effect
+   tile grid. .fx-select (font dropdown) is shared and lives in EffectsPanel.css. */
+
+.tx-input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--border-3);
+  border-radius: 10px;
+  resize: vertical;
+}
+.tx-input:focus { outline: 2px solid var(--cobalt); outline-offset: -1px; }
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tx-row .fx-select { flex: 1; }
+
+.seg-mini {
+  display: inline-flex;
+  border: 1.5px solid var(--border-3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.seg-mini button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: none;
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.seg-mini button.is-active { background: var(--ink); color: var(--paper); }
+
+.tx-swatch {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border-3);
+  border-radius: 8px;
+  background: #fff;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.tx-swatch input[type='color'] {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-3);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.tx-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.tx-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 4px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--border-3);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tx-tile:hover { background: #fff; border-color: var(--ink); }
+.tx-tile.is-active {
+  background: #fff;
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
+}
+.tx-tile-art {
+  width: 100%;
+  height: 46px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  object-fit: contain;
+}
+.tx-tile-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  color: var(--text-2);
+  text-align: center;
+}

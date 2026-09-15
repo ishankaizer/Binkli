@@ -1,0 +1,223 @@
+/* panel/StackTab.tsx: the ordered layer list, per-layer param editor, and
+   the cutout/background-removal controls. .fx-select/.fx-text/.fx-stack-empty
+   are shared with other tabs and live in EffectsPanel.css. */
+
+.fx-stack-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+
+.fx-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+/* --fx is set inline per layer (see effectColor()) so a stack of different
+   effect types reads as distinguishable things, not identical grey rows. */
+.fx-layer {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--border-3);
+  border-left: 3px solid var(--fx, var(--border-3));
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+.fx-layer.is-open { background: rgba(255, 255, 255, 0.9); }
+.fx-layer.is-dragging {
+  opacity: 0.55;
+  box-shadow: 0 6px 14px rgba(20, 18, 31, 0.18);
+}
+.fx-layer-grab {
+  flex: none;
+  width: 14px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.fx-layer-grab:active { cursor: grabbing; color: var(--ink); }
+.fx-layer.is-hidden { opacity: 0.55; }
+.fx-layer.is-hidden .fx-layer-thumb { filter: grayscale(1); }
+.fx-layer-eye {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fx, var(--ink));
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.fx-layer.is-hidden .fx-layer-eye { color: var(--text-3); }
+.fx-layer-eye:hover { transform: scale(1.15); }
+
+.fx-layer-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fx-layer-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.fx-layer-step {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--fx, var(--text-3));
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.fx-layer-thumb {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  object-fit: cover;
+  border: 1px solid var(--border-3);
+}
+.fx-layer-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.fx-layer-name {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fx-layer-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fx-layer-caret {
+  flex: none;
+  color: var(--text-3);
+  font-size: 10px;
+}
+/* Reorder/remove live inside the expanded body — in the collapsed row they
+   squeezed the layer name down to three truncated characters. */
+.fx-layer-tools {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+.fx-layer-tools button {
+  flex: 1;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-3);
+  background: #fff;
+  border-radius: 5px;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.fx-layer-tools button:disabled { opacity: 0.3; }
+.fx-layer-tools button:hover:not(:disabled) { background: var(--surface-3); }
+.fx-layer-kill { color: var(--red) !important; border-color: var(--red-bg) !important; }
+
+.fx-layer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-2);
+}
+
+.fx-param {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.fx-param-solo { margin-bottom: 4px; }
+.fx-param-label { width: 64px; flex: none; }
+.fx-range { flex: 1; accent-color: var(--cobalt); }
+.fx-color { width: 26px; height: 20px; padding: 0; border: 1px solid var(--border-3); flex: none; }
+.fx-param-value { width: 28px; text-align: right; flex: none; font-family: var(--font-mono); }
+.fx-param-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Cutout: shape + background removal, photo nodes only ────────────── */
+
+.cut-shape-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cut-shape {
+  padding: 5px 11px;
+  border: 1.5px solid var(--border-3);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+.cut-shape:hover { border-color: var(--ink); }
+.cut-shape.is-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.cut-bg-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cut-bg-toggle input { accent-color: var(--cobalt); cursor: pointer; }

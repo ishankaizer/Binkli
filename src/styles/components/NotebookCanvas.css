@@ -1,0 +1,158 @@
+/* NotebookCanvas.tsx: the page surface, pan/zoom, empty-state hint,
+   the "+ add" button group, frame preset picker, zoom badge. */
+
+/* Uniform margin on top/left/bottom; the right edge stops short of the
+   effects panel (320px) so the page tucks in just under its torn edge. */
+.canvas-area {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  bottom: 28px;
+  right: 296px;
+  z-index: 1;
+}
+
+.notebook {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  border-radius: 3px;
+  box-shadow:
+    0 2px 0 rgba(20, 18, 31, 0.06),
+    0 26px 60px rgba(20, 18, 31, 0.24);
+  overflow: hidden;
+}
+/* Real paper stays real — this is only the ruled overlay for the 'ruled' page */
+.notebook.ruled::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 33px,
+    rgba(45, 120, 200, 0.20) 33px 34px
+  );
+}
+/* Red margin line — a real notebook has one; this is a line, not redrawn paper */
+.notebook .margin-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 11%;
+  width: 2px;
+  background: rgba(232, 48, 48, 0.42);
+  pointer-events: none;
+}
+
+.pan-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Positioned relative to .workstation (matches .canvas-area's own top/right
+   inset + a 14px margin), not .notebook, so it renders in the workstation's
+   top-level stacking order. From inside canvas-area it would be visually
+   painted under the effects panel's torn edge, a sibling stacking context
+   at a higher z-index that no z-index on a canvas-area descendant can beat. */
+.canvas-add-group {
+  position: absolute;
+  top: 42px;
+  right: 310px;
+  z-index: 45;
+  display: flex;
+  gap: 8px;
+}
+.canvas-add-group .sticker-btn { cursor: pointer; }
+
+.frame-picker-wrap { position: relative; }
+.frame-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: var(--sticker-shadow-lg);
+}
+.frame-picker button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.frame-picker button:hover { background: var(--surface-3); }
+.frame-picker-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.frame-picker-size {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+}
+
+/* Empty-state hint */
+.empty-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  cursor: pointer;
+  padding: 0 12%;
+}
+.empty-hint .marker {
+  font-family: var(--font-marker);
+  font-size: clamp(26px, 4vw, 42px);
+  color: var(--ink);
+  transform: rotate(-2deg);
+  line-height: 1.05;
+}
+.empty-hint .sub {
+  font-family: var(--font-hand);
+  font-size: 20px;
+  color: var(--text-2);
+  margin-top: 10px;
+}
+
+/* ── Pan/zoom scale badge ─────────────────────────────────────────────── */
+
+.zoom-badge {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--sticker-shadow);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.zoom-badge:hover { background: var(--butter-bg); }
+.zoom-badge .zoom-hint { color: var(--text-3); font-size: 9px; }

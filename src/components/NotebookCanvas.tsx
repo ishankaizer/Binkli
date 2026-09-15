@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DragEvent, PointerEvent as ReactPointerEvent } from 'react';
+import '../styles/components/NotebookCanvas.css';
 import type { NotebookPaper } from '../lib/textures';
 import type { PlacedImage } from '../lib/imageNode';
 import CanvasDecor from './CanvasDecor';

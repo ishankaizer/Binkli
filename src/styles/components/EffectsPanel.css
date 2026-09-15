@@ -1,0 +1,232 @@
+/* EffectsPanel.tsx: the right-rail shell — torn-paper panel body, header,
+   tabs, and the generic empty/section-head/label styles the tab components
+   (panel/TextTab.css, panel/AddTab.css, panel/StackTab.css) all reuse. */
+
+.effects-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: 356px;
+  padding: 74px 20px 24px 44px;
+  color: var(--ink);
+  /* Warm cream matching the torn-edge PNG fill */
+  background-color: #F4EAD2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panel-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: -10px;
+  padding-right: 10px;
+}
+/* Faint real-paper grain over the cream (kept subtle so it doesn't go muddy) */
+.effects-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/textures/paper-photocopy.jpg');
+  background-size: cover;
+  background-position: right center;
+  mix-blend-mode: multiply;
+  opacity: 0.12;
+  pointer-events: none;
+}
+/* The REAL torn-paper strip: a scanned-grain PNG with irregular alpha edge.
+   Its drop-shadow follows the true torn silhouette, lifting it off the page. */
+.panel-tear {
+  position: absolute;
+  top: 0;
+  left: -78px;
+  height: 100%;
+  width: auto;
+  pointer-events: none;
+  filter: drop-shadow(-7px 0 12px rgba(20, 18, 31, 0.22));
+}
+.panel-title {
+  position: relative;
+  font-family: var(--font-marker);
+  font-size: 24px;
+  color: var(--ink);
+  transform: rotate(-2deg);
+  margin-bottom: 4px;
+}
+.panel-head { position: relative; margin-bottom: 12px; }
+
+/* Tabs keep the stack, the catalog and the text editor from fighting over one
+   long scroll, which is what made the panel feel like a wall of controls. */
+.panel-tabs {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 14px;
+  border: 1.5px solid var(--border-3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.panel-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-2);
+  font-family: var(--font-hand-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.panel-tab:hover { color: var(--ink); }
+.panel-tab.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 2px 0 rgba(20, 18, 31, 0.25);
+}
+.panel-tab-count {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+}
+.panel-tab.is-active .panel-tab-count { background: rgba(255, 255, 255, 0.24); }
+.panel-tab:not(.is-active) .panel-tab-count { background: var(--surface-3); }
+
+.panel-muted {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  text-transform: none;
+}
+
+/* Empty state, shown when nothing is selected */
+.panel-empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+.panel-empty-mark {
+  font-family: var(--font-marker);
+  font-size: 22px;
+  color: var(--border-3);
+  transform: rotate(20deg);
+}
+.panel-empty p {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0;
+}
+.panel-empty-note { color: var(--text-3) !important; font-size: 12px !important; }
+
+/* Shared section/label styles used across all three tabs */
+.panel-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 18px 0 8px;
+}
+.panel-section-head:first-child { margin-top: 0; }
+.panel-count {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.panel-clear {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.panel-clear:hover { text-decoration: underline; }
+.panel-divider {
+  position: relative;
+  display: block;
+  width: calc(100% + 30px);
+  margin: 16px 0 16px -20px;
+  height: 22px;
+  object-fit: cover;
+  pointer-events: none;
+}
+.panel-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 18px;
+}
+.panel-slot {
+  font-family: var(--font-hand);
+  font-size: 16px;
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px dashed var(--border-3);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+}
+
+.panel-group-label {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 18px 0 8px;
+}
+.panel-group-label:first-of-type { margin-top: 0; }
+
+/* Rules shared by more than one tab, kept here since no single tab owns
+   them (see effects-engine.md for the panel/*.tsx split these mirror). */
+.fx-select,
+.fx-text {
+  flex: 1;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border-3);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+.fx-stack-empty {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0 0 4px;
+}

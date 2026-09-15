@@ -2,6 +2,7 @@
 // EFFECT_CATALOG, with a live thumbnail per tile and a badge when it's
 // already applied to the selected node.
 
+import '../../styles/components/panel/AddTab.css';
 import type { EffectCategory } from '../../lib/effectCatalog';
 import type { EffectParams, EffectType } from '../../lib/effects';
 

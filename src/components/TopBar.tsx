@@ -1,3 +1,4 @@
+import '../styles/components/TopBar.css';
 import { NOTEBOOKS, type NotebookKey } from '../lib/textures';
 
 interface TopBarProps {

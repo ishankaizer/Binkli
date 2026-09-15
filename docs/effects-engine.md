@@ -1,8 +1,11 @@
 # The effects engine
 
-Read this before touching anything under `src/lib/effects/` or the Stack tab
-in `src/components/panel/`. It's the raster image-effects system: canvas in,
-canvas out, stackable and order-dependent.
+Read this before touching anything under `src/lib/effects/`,
+`src/lib/textEffects/`, or `src/components/panel/`. It's the raster
+image/text-effects system: canvas in, canvas out, stackable and
+order-dependent. **For CSS/styling changes to any of this UI**, skip to
+[`architecture.md`](./architecture.md#where-a-components-css-lives) instead —
+this doc is about the canvas rendering logic, not stylesheets.
 
 ## Where things live
 
@@ -45,6 +48,35 @@ export it, import it into `index.ts`, and add a `case` in
 `*_FX` array in `effectCatalog.ts`, and a `PARAM_CONFIG` entry in
 `src/components/panel/paramConfig.ts` for each new param key so its slider
 actually shows up in the Stack tab.
+
+## The text effects engine
+
+`src/lib/textEffects/` is the same pattern applied to text nodes, split by
+`TEXT_EFFECT_GROUPS` (defined in `types.ts`) instead of `EFFECT_CATALOG`:
+
+| File | Group | Effects |
+|---|---|---|
+| `basics.ts` | Basics | plain, outline, hard shadow, long shadow, highlighter marker, die-cut sticker |
+| `dimension.ts` | Dimension | 3D extrude, bubble, letterpress, chrome, varsity |
+| `light.ts` | Light | neon, gradient, rainbow |
+| `motion.ts` | Motion | motion blur, radial (zoom) blur, echo, arc |
+| `broken.ts` | Broken | chromatic split, glitch, halftone, ransom note |
+| `types.ts` | — | `TextEffectType`, `TextFontKey`, `TextConfig`, `TEXT_FONTS` (17 fonts), `TEXT_EFFECTS`, `TEXT_EFFECT_GROUPS` |
+| `helpers.ts` | — | `layout`/`eachLine`/`prep` (text layout), `scratch`, `shade`/`tint` (colour math) |
+| `index.ts` | — | `renderTextCanvas()` dispatcher, re-exports everything from `types.ts` and `fontsReady` from `helpers.ts` |
+
+Same rules as the image effects engine apply: open the group file directly
+to fix one effect, `'../lib/textEffects'` still resolves to `index.ts` so no
+import elsewhere had to change, and adding an effect means adding it to
+`TextEffectType` in `types.ts`, writing the renderer in (or adding) a group
+file with signature `(ctx, canvas, cfg, l, s)`, exporting it, wiring a
+`case` into `index.ts`'s switch, and adding a `TextEffectDef` entry to
+`TEXT_EFFECTS` in `types.ts` so it shows up as a tile in the Text tab.
+
+This split (2026-09-16, see [`changelog.md`](./changelog.md) #13) was
+verified by rendering all 22 effects with the old monolithic implementation
+and the new split one side by side and diffing `canvas.toDataURL()` —
+byte-identical on every effect, not just visually similar.
 
 ## The panel side
 

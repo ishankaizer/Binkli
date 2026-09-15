@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import '../styles/components/SplashScreen.css';
 import { STICKERS } from '../lib/stickers';
 import { TEXTURES } from '../lib/textures';
 

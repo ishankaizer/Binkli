@@ -1,0 +1,58 @@
+/* TopBar.tsx: paper/scene picker, recipes/clear-all/export buttons.
+   .sticker-btn itself lives in styles/shared.css (used by other components too). */
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+
+.wordmark {
+  font-family: var(--font-marker);
+  font-size: 30px;
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  transform: rotate(-3deg);
+  user-select: none;
+}
+.wordmark .dot { color: var(--red); }
+
+.topbar-spacer { flex: 1; }
+
+.picker-group {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--sticker-shadow);
+}
+.picker-chip {
+  font-family: var(--font-hand);
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  padding: 5px 11px;
+  border-radius: 9px;
+}
+.picker-chip.is-active { background: var(--ink); color: var(--butter); }
+.picker-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  align-self: center;
+  padding-left: 4px;
+}

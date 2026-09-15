@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import '../styles/components/ExportModal.css';
 import { EXPORT_PRESETS, type ExportFileType, type ExportPreset } from '../lib/exportImage';
 
 interface ExportModalProps {

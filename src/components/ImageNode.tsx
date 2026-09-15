@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import '../styles/components/ImageNode.css';
 import { applyEffectLayer, applyGrainOverlay } from '../lib/effects';
 import { fontsReady, renderTextCanvas } from '../lib/textEffects';
 import { applyCutoutMask, removeBackground } from '../lib/cutout';
