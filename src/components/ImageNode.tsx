@@ -9,6 +9,7 @@ interface ImageNodeProps {
   onSelect: (id: string) => void;
   onUpdate: (id: string, patch: Partial<PlacedImage>) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
 }
 
 type DragMode = 'move' | 'resize' | 'rotate';
@@ -23,7 +24,7 @@ interface DragState {
   startAngle: number;
 }
 
-export default function ImageNode({ image, selected, onSelect, onUpdate, onDelete }: ImageNodeProps) {
+export default function ImageNode({ image, selected, onSelect, onUpdate, onDelete, onDuplicate }: ImageNodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -149,10 +150,20 @@ export default function ImageNode({ image, selected, onSelect, onUpdate, onDelet
       onPointerUp={onDragEnd}
       onClick={(e) => e.stopPropagation()}
     >
-      <canvas ref={canvasRef} data-node={image.id} width={image.width} height={image.height} />
+      <canvas ref={canvasRef} width={image.width} height={image.height} />
 
       {selected && (
         <>
+          <button
+            type="button"
+            className="image-node-duplicate"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => onDuplicate(image.id)}
+            aria-label="duplicate image"
+            title="Duplicate (Cmd/Ctrl+D)"
+          >
+            ⧉
+          </button>
           <button
             type="button"
             className="image-node-delete"

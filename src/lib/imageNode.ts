@@ -35,3 +35,19 @@ export function createPlacedImage(file: File, centerX: number, centerY: number):
     grain: 0,
   };
 }
+
+/**
+ * Clones a placed image (new id, fresh layer ids so the two stacks never
+ * share references), offset so the copy doesn't sit exactly on top of the
+ * original. Reuses the same `src` object URL, safe: multiple <canvas>/<img>
+ * consumers can read the same blob URL, it's only revoked on delete.
+ */
+export function duplicatePlacedImage(image: PlacedImage, offset = 24): PlacedImage {
+  return {
+    ...image,
+    id: crypto.randomUUID(),
+    x: image.x + offset,
+    y: image.y + offset,
+    effectStack: image.effectStack.map((layer) => ({ ...layer, id: crypto.randomUUID() })),
+  };
+}

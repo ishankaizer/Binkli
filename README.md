@@ -126,15 +126,19 @@ src/
     effectThumbs.ts              useEffectThumbs() hook — renders every catalog effect onto a 64px crop of the
                                   selected photo, cached per source image, so the panel shows real previews
     recipes.ts                   RECIPES — 18 preset effect stacks ported from binkli-reference, + applyRecipe()
+    exportImage.ts                EXPORT_PRESETS + exportPlacedImage() — re-renders the effect stack fresh at
+                                   export resolution (cover-fit into a preset, or native size) and downloads it
   components/
     SplashScreen.tsx           landing screen — matches splash2.png
     TopBar.tsx                 paper picker (scene backdrop folded in, see Status #7), recipes/clear-all/export (all wired)
-    NotebookCanvas.tsx         the page surface; owns drag-drop/file-picker import + position clamping
-    ImageNode.tsx              a placed photo: <canvas> raster compositing + move/resize/rotate/delete/select
+    NotebookCanvas.tsx         the page surface; owns drag-drop/file-picker import + position clamping; also
+                                renders the "+ add image" button as a sibling, not a child (see Status #8)
+    ImageNode.tsx              a placed photo: <canvas> raster compositing + move/resize/rotate/duplicate/delete/select
     CanvasDecor.tsx            ambient washi tape + placed stickers on the canvas
-    EffectsPanel.tsx           right rail; ordered effect-stack editor (add/reorder/remove/opacity/params) + grain +
-                                per-effect live thumbnails (see Status #7)
+    EffectsPanel.tsx           right rail; ordered effect-stack editor (drag handle + move/remove/opacity/params) +
+                                grain + per-effect live thumbnails (see Status #7, #8)
     FolderShelf.tsx            bottom drawer of recipe cards, wired to the effects engine (see Status #7)
+    ExportModal.tsx            format (6 presets + original) and PNG/JPG picker, calls lib/exportImage.ts
 scripts/
   cut_assets.py                 sticker/folder background removal (flood-fill)
   make_torn_paper.py            generates the torn-paper texture PNGs
@@ -199,9 +203,8 @@ references/                        78 design reference images
      (`lib/cutout.ts`, 289 lines — a separate subsystem, deliberately
      deferred rather than rushed), gradient-lab. Recipe wiring is now done,
      see #7. Flag if cutout/gradient-lab matter for a future pass.
-6. Export — **DONE.** `TopBar`'s export button downloads the selected
-   photo's `<canvas>` as a PNG (`App.tsx: handleExport`). Disabled (with a
-   title tooltip) when nothing is selected.
+6. Export (v1) — superseded by #8: originally just downloaded the selected
+   photo's small on-page `<canvas>` as a PNG, no format options.
 7. Recipe wiring + live effect thumbnails + paper/scene merge —
    **DONE.** Picked back up after a session that ran out of credits mid-way
    with this work uncommitted (functionally complete, just never landed):
@@ -236,6 +239,43 @@ references/                        78 design reference images
      flex rows (opacity/level sliders, the layer header). Added the missing
      CSS; removed the now-dead `.fx-param-row`/`.fx-layer-index`/
      `.fx-layer-remove`/`.fx-add-row` rules the rewrite had orphaned.
+8. Recipe disabled-state fix, bigger canvas, add-image button, copy/paste/
+   duplicate, drag-to-reorder effects, real export modal — **DONE.**
+   - **Recipes "not working" bug**: `.folder-card:disabled` had no CSS at
+     all, a card with no photo selected looked identical to an enabled one
+     and silently did nothing when clicked, no error, no visual cue. This
+     was the actual root cause (the wiring itself was already correct).
+     Added a disabled state (greyed out, `cursor: not-allowed`) and styled
+     `.folder-card-tag`, also missing.
+   - **Canvas resized**: `.canvas-area`/`.notebook` no longer centre a
+     fixed `min(62vw, 780px)` card with a decorative rotation. It now fills
+     a uniform 28px margin on top/left/bottom, stopping at `right: 260px`
+     so it tucks in just under the effects panel's torn edge.
+   - **`+ add image`** (`NotebookCanvas.tsx`): a persistent button, top
+     right of the canvas, opens the same file picker as the empty-state
+     click. Had to be rendered as a sibling of `.canvas-area` (not a child),
+     a child's z-index can never beat the effects panel's torn-edge image,
+     which lives in a higher sibling stacking context, regardless of the
+     value used, so it was rendering correctly but visually buried under
+     the torn paper the whole time.
+   - **Copy / paste / duplicate**: `lib/imageNode.ts: duplicatePlacedImage()`
+     clones a photo (new id, fresh layer ids, offset position). Wired as a
+     duplicate button on the selected node (top-left, mirrors the delete
+     button), Cmd/Ctrl+D, Cmd/Ctrl+C then Cmd/Ctrl+V (cascades diagonally on
+     repeated paste), and a native `paste` handler that imports a real image
+     from the OS clipboard (a screenshot, a copied image) when there is one.
+   - **Drag-to-reorder** (`EffectsPanel.tsx`): a grab handle (⠿) on each
+     stacked layer, live reorder as the pointer crosses a neighbour's
+     midpoint (not just on drop). The existing ↑/↓ buttons stay. Tracks the
+     dragged id in a ref, not state, pointermove can fire faster than a
+     state update commits between events, which silently dropped moves.
+   - **Export rebuilt** (`lib/exportImage.ts`, `ExportModal.tsx`): re-renders
+     the full effect stack fresh at export resolution (was exporting the
+     small on-page canvas as-is). A preset cover-fits the source into the
+     target frame, matching `binkli-reference`'s old behaviour; "Original
+     size" skips that. Six presets (Square Post, Story, Poster, Album Cover,
+     Wallpaper, Desktop) each carry an existing pastel token for their
+     swatch, PNG/JPG choice, busy state while rendering.
 
 ## Design tokens quick reference
 

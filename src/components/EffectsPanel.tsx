@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { EFFECT_CATALOG, effectColor, effectLabel } from '../lib/effectCatalog';
 import { useEffectThumbs } from '../lib/effectThumbs';
 import { GRADIENT_MAP_PRESETS, type EffectLayer, type EffectParams, type EffectType } from '../lib/effects';
@@ -117,6 +118,12 @@ function ParamRow({ paramKey, value, onChange }: {
 export default function EffectsPanel({ image, onUpdate }: EffectsPanelProps) {
   const thumbs = useEffectThumbs(image?.src ?? null);
   const [open, setOpen] = useState<string[]>([]);
+  // draggingId (state) drives the .is-dragging visual only, a render behind
+  // is fine there. The drag logic itself reads draggingRef, since pointermove
+  // can fire faster than a state update commits between events.
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const draggingRef = useRef<string | null>(null);
+  const layerRefs = useRef(new Map<string, HTMLDivElement>());
 
   // Drop expanded state for layers that no longer exist.
   useEffect(() => {
@@ -172,6 +179,40 @@ export default function EffectsPanel({ image, onUpdate }: EffectsPanelProps) {
   const toggleOpen = (id: string) =>
     setOpen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  // Live drag-to-reorder: as the pointer crosses another layer's midpoint,
+  // the stack reorders immediately (not just on drop).
+  const reorderTo = (dragId: string, clientY: number) => {
+    const dragIndex = stack.findIndex((l) => l.id === dragId);
+    if (dragIndex === -1) return;
+    let targetIndex = 0;
+    for (const layer of stack) {
+      if (layer.id === dragId) continue;
+      const el = layerRefs.current.get(layer.id);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (clientY > rect.top + rect.height / 2) targetIndex++;
+    }
+    if (targetIndex === dragIndex) return;
+    const next = [...stack];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    onUpdate(img.id, { effectStack: next });
+  };
+
+  const beginLayerDrag = (id: string) => (e: ReactPointerEvent) => {
+    e.stopPropagation();
+    draggingRef.current = id;
+    setDraggingId(id);
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+  const onLayerDragMove = (id: string) => (e: ReactPointerEvent) => {
+    if (draggingRef.current === id) reorderTo(id, e.clientY);
+  };
+  const endLayerDrag = () => {
+    draggingRef.current = null;
+    setDraggingId(null);
+  };
+
   const countOf = (type: EffectType) => stack.filter((l) => l.type === type).length;
 
   return (
@@ -205,10 +246,24 @@ export default function EffectsPanel({ image, onUpdate }: EffectsPanelProps) {
                 return (
                   <div
                     key={layer.id}
-                    className={`fx-layer${isOpen ? ' is-open' : ''}`}
+                    ref={(el) => {
+                      if (el) layerRefs.current.set(layer.id, el);
+                      else layerRefs.current.delete(layer.id);
+                    }}
+                    className={`fx-layer${isOpen ? ' is-open' : ''}${draggingId === layer.id ? ' is-dragging' : ''}`}
                     style={{ ['--fx' as string]: effectColor(layer.type) }}
                   >
                     <div className="fx-layer-head">
+                      <span
+                        className="fx-layer-grab"
+                        onPointerDown={beginLayerDrag(layer.id)}
+                        onPointerMove={onLayerDragMove(layer.id)}
+                        onPointerUp={endLayerDrag}
+                        onPointerCancel={endLayerDrag}
+                        aria-hidden
+                      >
+                        ⠿
+                      </span>
                       <button
                         className="fx-layer-main"
                         type="button"
